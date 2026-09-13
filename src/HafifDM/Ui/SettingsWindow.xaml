@@ -20,7 +20,8 @@
         </Grid>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
+            <!-- Sag kenar bosluğu: kaydirma cubugu icerigin uzerine binmesin -->
+            <StackPanel Margin="0,0,14,0">
 
                 <!-- Klasorler -->
                 <Border Style="{StaticResource Card}">

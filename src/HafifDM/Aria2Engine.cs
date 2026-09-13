@@ -39,7 +39,9 @@ public static class Aria2Engine
         Set("save-session", AppPaths.SessionFile);
         Set("save-session-interval", 30);
         Set("max-download-result", 1000);
-        Set("force-save", "true");
+        // force-save BILEREK kapali: acik oldugunda aria2, tamamlanan her indirmenin
+        // yaninda .aria2 kontrol dosyasini birakiyor ve indirme klasoru cop doluyor.
+        // Bedeli: seed edilen bir torrent, makine yeniden baslayinca seed'e devam etmez.
         if (File.Exists(AppPaths.SessionFile))
             Set("input-file", AppPaths.SessionFile);
 

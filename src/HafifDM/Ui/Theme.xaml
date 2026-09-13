@@ -156,10 +156,181 @@
         </Style.Triggers>
     </Style>
 
+    <!--
+      ComboBox'in kendi sablonu yazilmak zorunda. Iki sebep:
+      1. WPF'in varsayilan ComboBox'i sistem krom renklerini kullaniyor, koyu temada beyaz kaliyor.
+      2. Yukaridaki ortuk TextBlock stili sablonun icine sizip yaziyi da beyaz yapiyor;
+         beyaz zemin + beyaz yazi = kutu bos gorunuyor. Foreground burada acikca veriliyor.
+    -->
+    <Style x:Key="Cmb.ToggleButton" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="ClickMode" Value="Press" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent">
+                        <Path x:Name="arrow" HorizontalAlignment="Right" VerticalAlignment="Center"
+                              Margin="0,0,11,0" Data="M 0 0 L 4 4 L 8 0"
+                              Stroke="{StaticResource B.TextDim}" StrokeThickness="1.6"
+                              StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="arrow" Property="Stroke" Value="{StaticResource B.Text}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{StaticResource B.Text}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="bd" Background="Transparent" Padding="{TemplateBinding Padding}"
+                            CornerRadius="5" Margin="3,1">
+                        <ContentPresenter TextElement.Foreground="{StaticResource B.Text}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource B.Accent}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="ComboBox">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Foreground" Value="{StaticResource B.Text}" />
+        <Setter Property="Background" Value="{StaticResource B.Bg}" />
+        <Setter Property="BorderBrush" Value="{StaticResource B.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="9,7" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource R.CornerRadius}" />
+
+                        <ToggleButton Style="{StaticResource Cmb.ToggleButton}"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,
+                                                  RelativeSource={RelativeSource TemplatedParent}}" />
+
+                        <!-- Duzenlenebilir hal -->
+                        <TextBox x:Name="PART_EditableTextBox" Margin="1,1,28,1"
+                                 Padding="{TemplateBinding Padding}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{StaticResource B.Text}"
+                                 CaretBrush="{StaticResource B.Text}"
+                                 SelectionBrush="{StaticResource B.Accent}"
+                                 VerticalContentAlignment="Center"
+                                 Visibility="Collapsed" />
+
+                        <!-- Salt okunur hal -->
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center" HorizontalAlignment="Left"
+                                          TextElement.Foreground="{StaticResource B.Text}"
+                                          TextElement.FontSize="13" />
+
+                        <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True"
+                               Focusable="False" PopupAnimation="Fade"
+                               IsOpen="{TemplateBinding IsDropDownOpen}">
+                            <Border Background="{StaticResource B.SurfaceAlt}"
+                                    BorderBrush="{StaticResource B.Border}" BorderThickness="1"
+                                    CornerRadius="{StaticResource R.CornerRadius}" Margin="0,4,0,0"
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,4">
+                                    <ItemsPresenter />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource B.TextDim}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Kaydirma cubugu: varsayilani sistem krom rengini kullanip koyu temada beyaz kaliyor. -->
+    <Style x:Key="Sb.Thumb" TargetType="Thumb">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border x:Name="bd" Background="{StaticResource B.Border}" CornerRadius="4"
+                            Margin="3,0" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{StaticResource B.TextDim}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Width" Value="11" />
+        <Setter Property="MinWidth" Value="11" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource Sb.Thumb}" />
+                            </Track.Thumb>
+                            <!-- Ok dugmeleri yok: modern ve sade, WPF yine de bunlari bekliyor -->
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                            </Track.DecreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Orientation" Value="Horizontal">
+                            <Setter Property="Height" Value="11" />
+                            <Setter Property="MinHeight" Value="11" />
+                            <Setter Property="Width" Value="Auto" />
+                            <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="Card" TargetType="Border">

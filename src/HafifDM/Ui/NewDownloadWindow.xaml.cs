@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace HafifDM.Ui;
 
@@ -22,7 +23,8 @@ public partial class NewDownloadWindow : Window
         InitializeComponent();
 
         for (var i = 1; i <= 16; i++) CmbConnections.Items.Add(i);
-        CmbConnections.SelectedItem = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16);
+        // SelectedItem ile kutulanmis int eslesmesine guvenme; indeks kesin.
+        CmbConnections.SelectedIndex = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16) - 1;
 
         foreach (var f in _cfg.RecentFolders) CmbFolder.Items.Add(f);
         if (!CmbFolder.Items.Contains(_cfg.DownloadDir)) CmbFolder.Items.Add(_cfg.DownloadDir);
@@ -243,7 +245,7 @@ public partial class NewDownloadWindow : Window
             Url = url,
             FileName = TxtFileName.Text.Trim(),
             TargetDir = folder,
-            Connections = CmbConnections.SelectedItem as int? ?? 8,
+            Connections = CmbConnections.SelectedIndex >= 0 ? CmbConnections.SelectedIndex + 1 : 8,
             SpeedLimitBytes = ParseSpeedLimitBytes(),
             StartPaused = paused,
             Extract = ChkExtract.IsChecked == true,

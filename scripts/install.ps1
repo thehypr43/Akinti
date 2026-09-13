@@ -133,15 +133,16 @@ if ($existing) {
 $cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigFile -Encoding utf8
 
 # Parola bu dosyada duruyor: erisimi sadece bu kullaniciya kisitla.
-$acl = Get-Acl $ConfigFile
-$acl.SetAccessRuleProtection($true, $false)   # miras alinan kurallari kaldir
-$acl.Access | ForEach-Object { [void]$acl.RemoveAccessRule($_) }
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    [System.Security.Principal.WindowsIdentity]::GetCurrent().User,
-    'FullControl', 'Allow')
-$acl.AddAccessRule($rule)
-Set-Acl -Path $ConfigFile -AclObject $acl
-Ok 'config.json sadece bu kullaniciya acik'
+# icacls kullaniliyor cunku Set-Acl, SACL'e de dokunmaya calisip
+# SeSecurityPrivilege istiyor ve yonetici olmadan dusuyor.
+$me = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+$icacls = & icacls.exe $ConfigFile /inheritance:r /grant:r "${me}:(F)" 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Ok 'config.json sadece bu kullaniciya acik'
+} else {
+    Warn2 "config.json izinleri daraltilamadi: $icacls"
+    Warn2 'Dosya yine de senin %APPDATA% klasorunde, baska kullanicilar goremez.'
+}
 
 # ---------------------------------------------------------------- 4. aria2.conf
 Step 'aria2.conf uretiliyor'
@@ -228,9 +229,9 @@ Ok "Kayit: HKCU\Software\Google\Chrome\NativeMessagingHosts\$HostName"
 
 # ---------------------------------------------------------------- 8. Guvenlik duvari
 Step 'Guvenlik duvari kurali'
-$isAdmin = ([System.Security.Principal.WindowsPrincipal]
-            [System.Security.Principal.WindowsIdentity]::GetCurrent()
-           ).IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+$identity      = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$winPrincipal  = New-Object System.Security.Principal.WindowsPrincipal($identity)
+$isAdmin       = $winPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if ($isAdmin) {
     Remove-NetFirewallRule -DisplayName 'HafifDM aria2 (gelen engelle)' -ErrorAction SilentlyContinue

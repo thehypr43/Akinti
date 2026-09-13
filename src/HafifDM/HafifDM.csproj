@@ -24,4 +24,15 @@
     <SatelliteResourceLanguages>en;tr</SatelliteResourceLanguages>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- WPF'in ImplicitUsings kumesi System.IO icermiyor, her dosyada lazim. -->
+    <Using Include="System.IO" />
+
+    <!-- ApplicationIcon sadece exe ikonunu ayarlar. Pencerelerdeki
+         Icon="/hafifdm.ico" bagi icin dosyanin ayrica kaynak olarak
+         gomulmesi gerekiyor, yoksa her pencere acilirken XamlParseException. -->
+    <None Remove="hafifdm.ico" />
+    <Resource Include="hafifdm.ico" />
+  </ItemGroup>
+
 </Project>

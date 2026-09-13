@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.Win32;
 
 namespace Akinti;
@@ -22,6 +22,10 @@ public sealed class ExtractResult
     public bool Success { get; init; }
     public string Message { get; init; } = "";
     public string? TargetDir { get; init; }
+
+    /// <summary>Arsiv sifreli ve verilen sifre yok ya da yanlis. Cagiran taraf
+    /// kullaniciya sorup ayni cagriyi sifreyle tekrarlar.</summary>
+    public bool NeedsPassword { get; init; }
 }
 
 /// <summary>
@@ -108,7 +112,11 @@ public static class Archivers
     /// Arsivi, arsiv adini tasiyan bir alt klasore acar.
     /// Cakisma olursa klasor adina " (2)", " (3)" eklenir; var olan dosyanin uzerine yazilmaz.
     /// </summary>
+    /// <param name="password">Sifreli arsivler icin. null ise arsivciye "sifre sorma"
+    /// denir: aksi halde UnRAR stdin'de, WinRAR ise gorunmez bir pencerede sifre
+    /// bekleyip surekli asili kalirdi.</param>
     public static async Task<ExtractResult> ExtractAsync(string archivePath, Config cfg,
+                                                         string? password = null,
                                                          CancellationToken ct = default)
     {
         if (!File.Exists(archivePath))
@@ -150,6 +158,8 @@ public static class Archivers
                 psi.ArgumentList.Add("x");
                 psi.ArgumentList.Add("-o" + target);
                 psi.ArgumentList.Add("-y");
+                // -p her zaman veriliyor: bos parola bile olsa 7z artik sormuyor.
+                psi.ArgumentList.Add("-p" + (password ?? ""));
                 psi.ArgumentList.Add("-bso0");   // stdout sus
                 psi.ArgumentList.Add("--");
                 psi.ArgumentList.Add(archivePath);
@@ -160,6 +170,7 @@ public static class Archivers
                 psi.ArgumentList.Add("-o+");     // uzerine yaz (hedef zaten bos klasor)
                 psi.ArgumentList.Add("-y");
                 psi.ArgumentList.Add("-idq");    // sessiz
+                psi.ArgumentList.Add(password is null ? "-p-" : "-p" + password);
                 psi.ArgumentList.Add(archivePath);
                 psi.ArgumentList.Add(target + Path.DirectorySeparatorChar);
                 break;
@@ -169,6 +180,7 @@ public static class Archivers
                 psi.ArgumentList.Add("-o+");
                 psi.ArgumentList.Add("-y");
                 psi.ArgumentList.Add("-ibck");   // arka planda, pencere acmadan
+                psi.ArgumentList.Add(password is null ? "-p-" : "-p" + password);
                 psi.ArgumentList.Add(archivePath);
                 psi.ArgumentList.Add(target + Path.DirectorySeparatorChar);
                 break;
@@ -199,6 +211,15 @@ public static class Archivers
             }
 
             TryRemoveEmptyDir(target);
+
+            if (NeedsPassword(archiver.Kind, proc.ExitCode, stderr))
+                return new ExtractResult
+                {
+                    Success = false,
+                    NeedsPassword = true,
+                    Message = password is null ? "Arşiv şifreli." : "Şifre yanlış."
+                };
+
             var msg = $"{archiver.DisplayName} hata verdi (kod {proc.ExitCode}). {stderr.Trim()}".Trim();
             Log.Error(msg);
             return new ExtractResult { Success = false, Message = msg };
@@ -209,6 +230,17 @@ public static class Archivers
             Log.Error("Arsiv acilamadi", ex);
             return new ExtractResult { Success = false, Message = "Arsiv acilamadi: " + ex.Message };
         }
+    }
+
+    /// <summary>Hatanin sebebi sifre mi? RAR araclari bunun icin ayri bir cikis
+    /// kodu (11) veriyor; 7z genel bir hata kodu verip sebebi metne yaziyor.</summary>
+    private static bool NeedsPassword(ArchiverKind kind, int exitCode, string stderr)
+    {
+        if (kind is ArchiverKind.UnRar or ArchiverKind.WinRar && exitCode == 11) return true;
+
+        return stderr.Contains("Wrong password", StringComparison.OrdinalIgnoreCase)
+               || stderr.Contains("encrypted", StringComparison.OrdinalIgnoreCase)
+               || stderr.Contains("password", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void TryRemoveEmptyDir(string dir)

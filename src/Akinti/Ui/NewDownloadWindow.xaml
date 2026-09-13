@@ -1,38 +1,16 @@
 ﻿<Window x:Class="Akinti.Ui.NewDownloadWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Bağlantı yakalandı" Width="468" SizeToContent="Height"
         Icon="/akinti.ico"
         Background="{DynamicResource B.Bg}"
-        WindowStyle="None" ResizeMode="NoResize"
+        ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
-    <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="0"
-                            GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
-    </shell:WindowChrome.WindowChrome>
-
-    <StackPanel Margin="16,10,10,16">
-
-        <!-- ═══ Başlık ═══ -->
-        <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent"
-              Margin="0,0,0,14">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="&#xE71B;" FontFamily="{StaticResource F.Icon}" FontSize="12"
-                           Foreground="{DynamicResource B.Accent}" VerticalAlignment="Center" />
-                <TextBlock x:Name="TxtDialogTitle" Text="Bağlantı yakalandı" Margin="9,0,0,0"
-                           FontSize="13" FontWeight="Medium" VerticalAlignment="Center" />
-            </StackPanel>
-            <Button Style="{StaticResource Btn.CaptionClose}" Click="BtnCancel_Click"
-                    Width="32" Height="26" HorizontalAlignment="Right">
-                <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource F.Icon}" FontSize="11"
-                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-            </Button>
-        </Grid>
+    <StackPanel Margin="16,14,16,16">
 
         <!-- ═══ Dosya ═══ -->
         <Grid>
@@ -83,18 +61,12 @@
             </Grid>
         </Border>
 
-        <!-- ═══ İndirme bitince (yalnızca uygun uzantılarda görünür) ═══ -->
+        <!-- ═══ İndirme bitince (yalnızca arşivlerde görünür) ═══ -->
         <StackPanel x:Name="PnlPost" Margin="2,12,0,0">
             <CheckBox x:Name="ChkExtract" Content="Klasöre çıkar" Visibility="Collapsed"
                       Checked="ChkExtract_Changed" Unchecked="ChkExtract_Changed" />
             <CheckBox x:Name="ChkDeleteArchive" Content="Çıkardıktan sonra arşivi sil"
                       Margin="26,6,0,0" Visibility="Collapsed" />
-            <CheckBox x:Name="ChkRunAdmin" Content="Yönetici olarak çalıştır" Visibility="Collapsed"
-                      Checked="ChkRunAdmin_Changed" Unchecked="ChkRunAdmin_Changed" />
-            <TextBlock x:Name="TxtAdminWarn" Visibility="Collapsed" Margin="26,5,0,0"
-                       FontSize="12" TextWrapping="Wrap"
-                       Foreground="{DynamicResource B.Danger}"
-                       Text="İndikten sonra yönetici yetkisiyle çalışacak. Sadece güvendiğin kaynaklarda işaretle." />
         </StackPanel>
 
         <!-- ═══ Torrent ═══ -->

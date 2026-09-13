@@ -76,11 +76,8 @@ public partial class DoneWindow : Window
     private void ShowFailed(DownloadItem item)
     {
         Title = "İndirme başarısız";
-        TxtHeader.Text = "İndirme başarısız";
-        IcoState.Text = "";
 
         var danger = (Brush)FindResource("B.Danger");
-        IcoState.Foreground = danger;
         Badge.Background = danger;
         IcoBadge.Text = "";
 
@@ -105,11 +102,6 @@ public partial class DoneWindow : Window
 
     // ──────────── Etkilesim ────────────
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
-
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
@@ -124,7 +116,7 @@ public partial class DoneWindow : Window
         TxtNote.Text = "Çıkarılıyor…";
         try
         {
-            var result = await Archivers.ExtractAsync(_filePath, Config.Load());
+            var result = await ExtractFlow.RunAsync(_filePath, Config.Load(), this);
 
             if (result.Success)
             {

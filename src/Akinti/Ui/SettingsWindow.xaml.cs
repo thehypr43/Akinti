@@ -18,11 +18,6 @@ public partial class SettingsWindow : Window
         LoadValues();
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
-
     /// <summary>Segmentli secim: 1/2/3/4/8. Baska bir deger varsa en yakini isaretlenir.</summary>
     private RadioButton SegFor(int value) => value switch
     {

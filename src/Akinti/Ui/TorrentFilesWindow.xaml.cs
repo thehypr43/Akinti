@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -162,11 +162,6 @@ public partial class TorrentFilesWindow : Window
             MessageBox.Show(this, "Secim uygulanamadi: " + ex.Message, "Akıntı",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-    }
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();

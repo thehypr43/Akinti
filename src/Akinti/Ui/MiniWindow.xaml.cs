@@ -111,7 +111,6 @@ public partial class MiniWindow : Window
         }
 
         var paused = item.Status == Aria2Status.Paused;
-        DotState.Fill = (Brush)FindResource(paused ? "B.TextFaint" : "B.Accent");
         TxtPct.Text = $"{(int)(item.Progress * 100)}%";
 
         TxtMeta.Text = item.TotalLength > 0
@@ -141,7 +140,7 @@ public partial class MiniWindow : Window
         {
             var stat = await _client.GetGlobalStatAsync();
 
-            TxtHeader.Text = paused ? "Duraklatıldı"
+            Title = paused ? "Duraklatıldı"
                 : stat.NumActive > 1 ? $"{stat.NumActive} indirme sürüyor"
                 : "İndiriliyor";
 
@@ -149,7 +148,7 @@ public partial class MiniWindow : Window
         }
         catch
         {
-            TxtHeader.Text = paused ? "Duraklatıldı" : "İndiriliyor";
+            Title = paused ? "Duraklatıldı" : "İndiriliyor";
             TxtNote.Text = "";
         }
     }
@@ -171,11 +170,6 @@ public partial class MiniWindow : Window
     }
 
     // ──────────── Etkilesim ────────────
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
 
     private void BtnHide_Click(object sender, RoutedEventArgs e) => Close();
 

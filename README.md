@@ -8,10 +8,12 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 
 - **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
 - **Her şey indirme klasörüne.** Türe göre otomatik alt klasörleme yok; klasörü istersen indirme penceresinden tek tek değiştirirsin.
-- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. İndirme penceresinde işaretle ya da bitince "Klasöre çıkar" de.
-- **Yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
+- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. İndirme penceresinde işaretle ya da bitince "Klasöre çıkar" de. Arşiv şifreliyse şifre sorulur.
+- **Yönetici olarak çalıştır.** Kurulum dosyaları için, indirme **bittikten sonra** sonuç penceresindeki düğmeden. UAC onayı Windows tarafından sorulur.
 
-Bu ikisi **yalnızca uygun uzantılarda** görünür: çıkarma bir arşivse (ve kurulu bir arşivci varsa), yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise. Uygulanamayacak bir seçenek hiç çizilmiyor.
+İkisi de **yalnızca uygun uzantılarda** görünür: çıkarma bir arşivse (ve kurulu bir arşivci varsa), yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise.
+
+"Yönetici olarak çalıştır" indirme penceresinde bilerek **yok**: daha eline geçmemiş bir dosya için peşinen yetki vermek doğru değil. O düğme, dosya inip görüldükten sonra çıkıyor.
 - **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
@@ -157,7 +159,9 @@ Sorun olursa: `%APPDATA%\Akinti\akinti.log`
 
 ## Tasarım
 
-Windows 11'in kendi görünümü. Açık/koyu tema ve vurgu rengi **sistemden** okunur
+Windows 11'in kendi görünümü. Başlık çubuğu da Windows'un kendisi: kapat / küçült /
+büyüt düğmeleri, çift tıklayıp büyütme, Snap yerleşimleri hep sistemin — elle çizilmiş
+düğmeler bunların hiçbirini vermiyordu. Çubuk, pencere zeminiyle aynı renge boyanıyor. Açık/koyu tema ve vurgu rengi **sistemden** okunur
 (`Ui/ThemeManager.cs`): Windows'ta temayı değiştirdiğinde açık pencereler de anında döner.
 Pencerelerin yuvarlatılmış köşesi ve ince kenar çizgisi DWM'den gelir (`Ui/WindowEffects.cs`).
 

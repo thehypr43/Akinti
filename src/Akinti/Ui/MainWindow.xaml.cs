@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -37,28 +37,10 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         Closed += (_, _) => { _timer.Stop(); _client?.Dispose(); };
         IsVisibleChanged += (_, _) => UpdateTimerState();
-        StateChanged += (_, _) => { UpdateTimerState(); UpdateMaximizeGlyph(); };
+        StateChanged += (_, _) => UpdateTimerState();
 
         UpdateUrlPlaceholder();
     }
-
-    // ──────────── Pencere kromu ────────────
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ClickCount == 2) { ToggleMaximize(); return; }
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
-
-    private void BtnMinimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    private void BtnMaximize_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
-    private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
-
-    private void ToggleMaximize() =>
-        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-
-    private void UpdateMaximizeGlyph() =>
-        IcoMaximize.Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
 
     private void UpdateTimerState()
     {
@@ -162,9 +144,10 @@ public partial class MainWindow : Window
         CntDone.Text = done.ToString();
         CntFailed.Text = failed.ToString();
 
-        TxtHeaderSummary.Text = running > 0 || waiting > 0
-            ? $"{running} indiriliyor · {waiting} kuyrukta"
-            : "hazır";
+        // Ozet, Windows'un kendi baslik cubugunda duruyor.
+        Title = running > 0 || waiting > 0
+            ? $"Akıntı — {running} indiriliyor · {waiting} kuyrukta"
+            : "Akıntı";
 
         var mb = stat.DownloadSpeed / 1024.0 / 1024.0;
         TxtTotalSpeed.Text = mb.ToString("0.0");

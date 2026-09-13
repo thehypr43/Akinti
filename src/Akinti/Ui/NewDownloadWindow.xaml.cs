@@ -8,10 +8,13 @@ namespace Akinti.Ui;
 /// Her indirmenin goz onunde onaylandigi yer. Eklentiden gelen mesaj sadece adresi
 /// belirler; hedef klasor YALNIZCA burada, kullanicinin kendi eliyle degistirilir.
 ///
-/// Pencere bilerek kucuk: dosya, nereye inecegi, iki dugme. Indirme sonrasi
-/// secenekler sadece uygulanabildiklerinde beliriyor - arsivde "klasore cikar",
-/// calistirilabilir dosyada "yonetici olarak calistir" - yani hicbir zaman
-/// uzantiyla ilgisiz bir kutu gorunmuyor.
+/// Pencere bilerek kucuk: dosya, nereye inecegi, iki dugme. Tek ek secenek
+/// arsivlerde cikan "Klasore cikar" kutusu.
+///
+/// "Yonetici olarak calistir" bu pencerede YOK ve olmamali: indirmeye baslarken
+/// sorulan bir yetki kutusu, daha eline gecmemis bir dosya icin pesinen onay
+/// vermek demek. O eylem, dosya inip goruldukten sonra sonuc penceresindeki
+/// dugmede duruyor.
 /// </summary>
 public partial class NewDownloadWindow : Window
 {
@@ -49,7 +52,7 @@ public partial class NewDownloadWindow : Window
         TxtFolder.Text = _folder;
 
         TxtUrl.Text = url ?? "";
-        TxtDialogTitle.Text = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
+        Title = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
 
         // Adres ve dosya adi kutulari yalnizca elle indirmede gerekli. Tarayicidan
         // gelen baglantida ikisi de belli; gostermek sadece kalabalik olurdu.
@@ -61,11 +64,6 @@ public partial class NewDownloadWindow : Window
         if (_hasSuggestedName) SetFileName(suggestedName!, force: true);
 
         Loaded += OnLoaded;
-    }
-
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -162,8 +160,6 @@ public partial class NewDownloadWindow : Window
     private void UpdateOptions()
     {
         var canExtract = !_isTorrentSource && Archivers.IsArchive(_fileName) && Archivers.AnyAvailable();
-        var canRun = !_isTorrentSource && PostActions.IsRunnable(_fileName);
-
         ChkExtract.Visibility = canExtract ? Visibility.Visible : Visibility.Collapsed;
         if (!canExtract) ChkExtract.IsChecked = false;
         else if (!_userTouchedExtract) ChkExtract.IsChecked = _cfg.ExtractArchivesDefault;
@@ -172,11 +168,7 @@ public partial class NewDownloadWindow : Window
             ? Visibility.Visible : Visibility.Collapsed;
         if (ChkDeleteArchive.Visibility != Visibility.Visible) ChkDeleteArchive.IsChecked = false;
 
-        ChkRunAdmin.Visibility = canRun ? Visibility.Visible : Visibility.Collapsed;
-        if (!canRun) ChkRunAdmin.IsChecked = false;
-
-        TxtAdminWarn.Visibility = ChkRunAdmin.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-        PnlPost.Visibility = canExtract || canRun ? Visibility.Visible : Visibility.Collapsed;
+        PnlPost.Visibility = canExtract ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ChkExtract_Changed(object sender, RoutedEventArgs e)
@@ -185,7 +177,6 @@ public partial class NewDownloadWindow : Window
         UpdateOptions();
     }
 
-    private void ChkRunAdmin_Changed(object sender, RoutedEventArgs e) => UpdateOptions();
 
     private async void TxtUrl_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -246,7 +237,6 @@ public partial class NewDownloadWindow : Window
             StartPaused = paused,
             Extract = ChkExtract.IsChecked == true,
             DeleteArchiveAfterExtract = ChkDeleteArchive.IsChecked == true,
-            RunAsAdmin = ChkRunAdmin.IsChecked == true,
             OpenFolder = _cfg.OpenFolderAfterDownloadDefault,
             Referrer = _referrer,
             Cookie = _cookie,

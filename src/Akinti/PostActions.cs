@@ -102,7 +102,9 @@ public static class PostActions
 
     private static async Task<string> ExtractAsync(string filePath, PendingAction pending, Config cfg)
     {
-        var result = await Archivers.ExtractAsync(filePath, cfg).ConfigureAwait(false);
+        // Sifreli arsivde kullaniciya sorar: indirmeyi kendi baslatip "cikar" dedigi
+        // icin bu noktada bir sifre penceresi bekliyor olmasi makul.
+        var result = await Ui.ExtractFlow.RunAsync(filePath, cfg).ConfigureAwait(false);
         if (!result.Success) return "Cikarma basarisiz: " + result.Message;
 
         if (pending.DeleteArchiveAfterExtract)

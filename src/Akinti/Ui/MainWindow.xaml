@@ -1,69 +1,16 @@
 ﻿<Window x:Class="Akinti.Ui.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="Akıntı" Height="660" Width="1040" MinHeight="460" MinWidth="880"
         Icon="/akinti.ico"
         Background="{DynamicResource B.Bg}"
-        WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
-    <shell:WindowChrome.WindowChrome>
-        <!-- Kendi baslik cubugumuz var; CaptionHeight 0 ki surukleme kodumuz devralsin.
-             ResizeBorderThickness pencerenin kenardan boyutlandirilmasini korur. -->
-        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6"
-                            GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
-    </shell:WindowChrome.WindowChrome>
-
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- ═══════════════ Baslik cubugu ═══════════════ -->
-        <Border Grid.Row="0" Height="46" Background="Transparent"
-                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-            <Grid Margin="14,0,6,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="24" Height="24" CornerRadius="{StaticResource R.Sm}"
-                            Background="{DynamicResource B.Surface}"
-                            BorderBrush="{DynamicResource B.Divider}" BorderThickness="1">
-                        <TextBlock Text="&#xE896;" Style="{StaticResource T.Icon}" FontSize="12"
-                                   Foreground="{DynamicResource B.Accent}" />
-                    </Border>
-                    <TextBlock Text="Akıntı" Margin="10,0,0,0" FontSize="14" FontWeight="Medium"
-                               VerticalAlignment="Center" />
-                    <TextBlock Text="—" Margin="9,0" Style="{StaticResource T.Muted}"
-                               VerticalAlignment="Center" />
-                    <TextBlock x:Name="TxtHeaderSummary" Style="{StaticResource T.Muted}"
-                               VerticalAlignment="Center" Text="hazır" />
-                </StackPanel>
-
-                <!-- Icerik olarak duz metin verilemez: ortuk TextBlock stili font ailesini
-                     ezip ikonu bos kareye cevirir. Her biri acik bir TextBlock. -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource Btn.Caption}" Click="BtnMinimize_Click">
-                        <TextBlock Text="&#xE921;" FontFamily="{StaticResource F.Icon}" FontSize="11"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                    <Button Style="{StaticResource Btn.Caption}" Click="BtnMaximize_Click">
-                        <TextBlock x:Name="IcoMaximize" Text="&#xE922;" FontFamily="{StaticResource F.Icon}"
-                                   FontSize="11"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                    <Button Style="{StaticResource Btn.CaptionClose}" Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource F.Icon}" FontSize="11"
-                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
         <!-- ═══════════════ Govde ═══════════════ -->
-        <Grid Grid.Row="1">
+        <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="186" />
                 <ColumnDefinition Width="*" />

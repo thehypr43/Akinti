@@ -17,7 +17,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- ─────── Kenar cubugu ─────── -->
-            <DockPanel Grid.Column="0" Margin="14,0,8,14">
+            <DockPanel Grid.Column="0" Margin="14,12,8,14">
 
                 <Button DockPanel.Dock="Top" Style="{StaticResource Btn.Primary}"
                         Click="BtnNew_Click" Padding="10,8" HorizontalContentAlignment="Center">
@@ -85,6 +85,19 @@
                         </Grid>
                     </RadioButton>
 
+                    <RadioButton x:Name="NavTorrent" Style="{StaticResource Nav.Item}" Tag="Torrent"
+                                 Checked="Nav_Checked">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                           VerticalAlignment="Center" Width="20" />
+                                <TextBlock Text="Torrent" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock x:Name="CntTorrent" Text="0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Style="{StaticResource T.Meta}" />
+                        </Grid>
+                    </RadioButton>
+
                     <RadioButton x:Name="NavSettings" Style="{StaticResource Nav.Item}" Tag="Settings"
                                  Checked="Nav_Checked">
                         <StackPanel Orientation="Horizontal">
@@ -120,7 +133,7 @@
             </DockPanel>
 
             <!-- ─────── Ana bolum ─────── -->
-            <DockPanel Grid.Column="1" Margin="6,0,14,0">
+            <DockPanel Grid.Column="1" Margin="6,12,14,0">
 
                 <!-- Baglanti yapistirma cubugu -->
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,18">
@@ -350,6 +363,11 @@
                             <MenuItem Header="Klasörü aç"               Click="CtxOpen_Click" />
                             <MenuItem Header="Arşivi çıkar"             Click="CtxExtract_Click" />
                             <MenuItem Header="Yönetici olarak çalıştır" Click="CtxRunAdmin_Click" />
+                            <Separator />
+                            <Separator />
+                            <MenuItem Header="Torrent dosyalarını seç…"  Click="CtxTorrentFiles_Click" />
+                            <MenuItem Header="Paylaşımı (seed) durdur"   Click="CtxStopSeed_Click" />
+                            <MenuItem Header="Magnet bağlantısını kopyala" Click="CtxCopyMagnet_Click" />
                             <Separator />
                             <MenuItem Header="Yeniden dene"             Click="CtxRetry_Click" />
                             <MenuItem Header="Adresi kopyala"           Click="CtxCopyUrl_Click" />

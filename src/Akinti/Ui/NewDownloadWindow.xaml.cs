@@ -23,6 +23,7 @@ public partial class NewDownloadWindow : Window
     private string? _userAgent;
 
     private CancellationTokenSource? _probeCts;
+    private readonly string? _torrentFile;
     private string _folder;
     private string _fileName = "";
     private bool _isTorrentSource;
@@ -35,6 +36,25 @@ public partial class NewDownloadWindow : Window
     {
         _cookie = captured.Cookie;
         _userAgent = captured.UserAgent;
+    }
+
+    /// <summary>Diskteki bir .torrent dosyasi (Gezgin'den cift tiklama).
+    /// Adres yok; dosyanin kendisi aria2'ye iceriyi olarak veriliyor.</summary>
+    public static NewDownloadWindow ForTorrentFile(string path) => new(path, forTorrentFile: true);
+
+    private NewDownloadWindow(string path, bool forTorrentFile) : this((string?)null)
+    {
+        _torrentFile = path;
+        _isTorrentSource = true;
+
+        Title = "Torrent dosyası";
+        PnlManual.Visibility = Visibility.Collapsed;
+        ChkPickFiles.Visibility = Visibility.Visible;
+
+        _fileName = Path.GetFileNameWithoutExtension(path);
+        TxtFileTitle.Text = _fileName;
+        IcoFile.Text = Icons.ForFile(path, isTorrent: true);
+        TxtSize.Text = "Torrent dosyası  ·  " + Path.GetFileName(path);
     }
 
     public NewDownloadWindow(string? url, string? referrer = null, string? suggestedName = null)
@@ -66,6 +86,8 @@ public partial class NewDownloadWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         _loading = false;
+
+        if (_torrentFile is not null) return;
 
         if (string.IsNullOrWhiteSpace(TxtUrl.Text))
         {
@@ -114,7 +136,11 @@ public partial class NewDownloadWindow : Window
         var info = await RemoteProbe.ProbeAsync(url, ct);
         if (ct.IsCancellationRequested) return;
 
-        SetFileName(info.FileName);
+        // Tarayicinin verdigi ad uzantisizsa (Chrome bazen adresi GUID olan
+        // dosyalarda boyle veriyor) sunucunun Content-Disposition adi daha iyidir.
+        var hintHasExtension = Path.HasExtension(_fileName);
+        if (!hintHasExtension && Path.HasExtension(info.FileName)) SetFileName(info.FileName, force: true);
+        else SetFileName(info.FileName);
         TxtSize.Text = info.Size > 0
             ? Format.Bytes(info.Size) + (host.Length > 0 ? "  ·  " + host : "")
             : (host.Length > 0 ? "Boyut bilinmiyor  ·  " + host : "Boyut bilinmiyor");
@@ -179,7 +205,11 @@ public partial class NewDownloadWindow : Window
     private async Task StartAsync(bool paused)
     {
         var url = TxtUrl.Text.Trim();
-        if (!UrlHelper.IsSupportedScheme(url)) { Warn("Geçerli bir indirme adresi girin."); return; }
+        if (_torrentFile is null && !UrlHelper.IsSupportedScheme(url))
+        {
+            Warn("Geçerli bir indirme adresi girin.");
+            return;
+        }
 
         if (!_cfg.IsConfigured)
         {
@@ -199,6 +229,7 @@ public partial class NewDownloadWindow : Window
         var req = new DownloadRequest
         {
             Url = url,
+            LocalTorrentPath = _torrentFile,
             FileName = _fileName,
             TargetDir = _folder,
             Connections = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16),

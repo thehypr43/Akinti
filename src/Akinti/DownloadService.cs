@@ -1,4 +1,4 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 
 namespace Akinti;
 
@@ -32,6 +32,10 @@ public sealed class DownloadRequest
     public bool OpenFolder { get; set; }
 
     // --- Torrent ---
+    /// <summary>Diskteki bir .torrent dosyasi. Doluysa Url yerine bu kullanilir:
+    /// dosya iceriyi olarak aria2'ye verilir, boylece cevrimici bir adres gerekmez.</summary>
+    public string? LocalTorrentPath { get; set; }
+
     /// <summary>Secili dosya indeksleri. Bos ise hepsi.</summary>
     public List<int> SelectedFileIndexes { get; set; } = new();
     public double? SeedRatio { get; set; }
@@ -46,7 +50,8 @@ public static class DownloadService
     public static async Task<string> EnqueueAsync(Aria2Client client, Config cfg,
                                                   DownloadRequest req, CancellationToken ct = default)
     {
-        if (!UrlHelper.IsSupportedScheme(req.Url))
+        var localTorrent = !string.IsNullOrWhiteSpace(req.LocalTorrentPath);
+        if (!localTorrent && !UrlHelper.IsSupportedScheme(req.Url))
             throw new InvalidOperationException("Desteklenmeyen adres: " + req.Url);
 
         Directory.CreateDirectory(req.TargetDir);
@@ -73,7 +78,7 @@ public static class DownloadService
         if (!string.IsNullOrWhiteSpace(req.Referrer))
             options["referer"] = req.Referrer!;
 
-        var isTorrentSource = UrlHelper.IsMagnet(req.Url) || UrlHelper.IsTorrentFileUrl(req.Url);
+        var isTorrentSource = localTorrent || UrlHelper.IsMagnet(req.Url) || UrlHelper.IsTorrentFileUrl(req.Url);
 
         // "out" sadece tek dosyali normal indirmelerde anlamli; torrentte dosya
         // adlarini torrentin kendisi belirler.
@@ -87,7 +92,12 @@ public static class DownloadService
             options["seed-ratio"] = ratio.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         string gid;
-        if (UrlHelper.IsTorrentFileUrl(req.Url) && !UrlHelper.IsMagnet(req.Url))
+        if (localTorrent)
+        {
+            var bytes = await File.ReadAllBytesAsync(req.LocalTorrentPath!, ct).ConfigureAwait(false);
+            gid = await client.AddTorrentAsync(bytes, options, ct).ConfigureAwait(false);
+        }
+        else if (UrlHelper.IsTorrentFileUrl(req.Url) && !UrlHelper.IsMagnet(req.Url))
         {
             // .torrent dosyasini once biz cekip icerik olarak ekliyoruz; boylece
             // aria2 once torrenti indirip sonra icerigi indirmek yerine tek adimda basliyor.
@@ -104,7 +114,7 @@ public static class DownloadService
         PendingStore.Add(new PendingAction
         {
             Gid = gid,
-            SourceUri = req.Url,
+            SourceUri = localTorrent ? req.LocalTorrentPath! : req.Url,
             Dir = req.TargetDir,
             FileName = req.FileName,
             Extract = req.Extract,

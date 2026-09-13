@@ -143,6 +143,7 @@ public partial class MainWindow : Window
         CntQueue.Text = waiting.ToString();
         CntDone.Text = done.ToString();
         CntFailed.Text = failed.ToString();
+        CntTorrent.Text = _rows.Count(r => r.IsTorrent).ToString();
 
         // Ozet, Windows'un kendi baslik cubugunda duruyor.
         Title = running > 0 || waiting > 0
@@ -179,6 +180,7 @@ public partial class MainWindow : Window
             "Queue" => r.State == RowState.Waiting,
             "Done" => r.State == RowState.Completed,
             "Failed" => r.State is RowState.Failed or RowState.Cancelled,
+            "Torrent" => r.IsTorrent,
             _ => r.State is RowState.Active or RowState.Waiting or RowState.Paused,
         };
         view.Refresh();
@@ -194,6 +196,8 @@ public partial class MainWindow : Window
                 "Queue" => ("Kuyruk boş", "Sıraya alınan aktarımlar burada bekler."),
                 "Done" => ("Henüz tamamlanan yok", "Biten indirmeler burada listelenir."),
                 "Failed" => ("Başarısız indirme yok", "İyi haber."),
+                "Torrent" => ("Torrent yok",
+                              "Bir .torrent dosyasına çift tıkla ya da magnet bağlantısını yukarıya yapıştır."),
                 _ => ("İndirme yok",
                       "Tarayıcıda bir bağlantıya sağ tıklayıp Akıntı ile indir seçin ya da yukarıya bağlantı yapıştırın."),
             };
@@ -425,6 +429,37 @@ public partial class MainWindow : Window
     {
         if (Selected is { InfoHash.Length: > 0 } row) TrySetClipboard(row.InfoHash!);
         else Warn("Bu kayıt bir torrent değil.");
+    }
+
+    /// <summary>Torrent icindeki dosyalari yeniden secmek icin. aria2 "select-file"
+    /// secenegini indirme sirasinda da degistirebiliyor.</summary>
+    private void CtxTorrentFiles_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { IsTorrent: true } row) { Warn("Bu kayıt bir torrent değil."); return; }
+        if (!_cfg.IsConfigured) return;
+        new TorrentFilesWindow(_cfg, row.Gid) { Owner = this }.Show();
+    }
+
+    /// <summary>Tamamlanmis bir torrent aria2'de kaldigi surece paylasmaya devam
+    /// eder. Bu, indirilen dosyaya dokunmadan paylasimi bitirir.</summary>
+    private async void CtxStopSeed_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { IsTorrent: true } row) { Warn("Bu kayıt bir torrent değil."); return; }
+        if (_client is null) return;
+        try
+        {
+            await _client.RemoveAsync(row.Gid);
+            await RefreshAsync();
+        }
+        catch (Exception ex) { Warn("Paylaşım durdurulamadı: " + ex.Message); }
+    }
+
+    private void CtxCopyMagnet_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { InfoHash.Length: > 0 } row) { Warn("Bu kayıt bir torrent değil."); return; }
+        var magnet = "magnet:?xt=urn:btih:" + row.InfoHash;
+        if (!string.IsNullOrWhiteSpace(row.Name)) magnet += "&dn=" + Uri.EscapeDataString(row.Name);
+        TrySetClipboard(magnet);
     }
 
     private static void TrySetClipboard(string text)

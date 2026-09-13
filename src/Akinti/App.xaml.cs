@@ -8,6 +8,7 @@ namespace Akinti;
 ///
 ///   (bos)                         -> Ana pencere
 ///   --new &lt;url&gt;             -> Yeni indirme diyalogu
+///   &lt;yol&gt;.torrent           -> Torrent dosyasi diyalogu (Gezgin'den cift tiklama)
 ///   chrome-extension://...        -> Chrome native messaging host (Chrome boyle baslatir)
 ///   &lt;gid&gt; &lt;n&gt; &lt;yol&gt; -> aria2 indirme-sonrasi kancasi (aria2 boyle cagirir)
 ///   --on-complete &lt;gid&gt; ... -> ayni kanca, elle test icin
@@ -109,6 +110,16 @@ public partial class App : Application
 
             var win = new NewDownloadWindow(args[newIndex + 1], referrer, suggested);
             win.Show();
+            return;
+        }
+
+        // --- Gezgin'den cift tiklanan .torrent dosyasi ---
+        // Windows dosya yolunu tek arguman olarak veriyor.
+        if (args.Length == 1 && args[0].EndsWith(".torrent", StringComparison.OrdinalIgnoreCase)
+            && File.Exists(args[0]))
+        {
+            ShutdownMode = ShutdownMode.OnLastWindowClose;
+            NewDownloadWindow.ForTorrentFile(args[0]).Show();
             return;
         }
 

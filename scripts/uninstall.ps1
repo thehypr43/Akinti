@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Akıntı'yı kaldırır.
 
@@ -30,6 +30,15 @@ Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction Silent
 Step 'Native messaging kaydi siliniyor'
 Remove-Item -Path "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$HostName" `
             -Recurse -Force -ErrorAction SilentlyContinue
+
+Step '.torrent dosya iliskilendirmesi kaldiriliyor'
+Remove-Item -Path 'HKCU:\Software\Classes\Akinti.Torrent' -Recurse -Force -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path 'HKCU:\Software\Classes\.torrent\OpenWithProgids' -Name 'Akinti.Torrent' `
+                    -Force -ErrorAction SilentlyContinue
+$torrentDefault = (Get-ItemProperty 'HKCU:\Software\Classes\.torrent' -ErrorAction SilentlyContinue).'(default)'
+if ($torrentDefault -eq 'Akinti.Torrent') {
+    Remove-ItemProperty -Path 'HKCU:\Software\Classes\.torrent' -Name '(Default)' -Force -ErrorAction SilentlyContinue
+}
 
 Step 'Guvenlik duvari kurali siliniyor'
 Remove-NetFirewallRule -DisplayName 'Akıntı aria2 (gelen engelle)' -ErrorAction SilentlyContinue

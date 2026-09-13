@@ -25,7 +25,7 @@
             </StackPanel>
         </Grid>
 
-        <StackPanel DockPanel.Dock="Top" Margin="20,0,20,14">
+        <StackPanel DockPanel.Dock="Top" Margin="20,14,20,14">
             <TextBlock x:Name="TxtTitle" Style="{StaticResource T.H4}"
                        Text="Torrent bilgileri bekleniyor…" TextTrimming="CharacterEllipsis" />
             <TextBlock x:Name="TxtSub" Style="{StaticResource T.Muted}" Margin="0,3,0,0" TextWrapping="Wrap"

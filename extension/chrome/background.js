@@ -23,6 +23,11 @@
 const HOST = "com.akinti.host";
 const CAPTURE_KEY = "capture";
 
+// Bu boyutun altindaki indirmeler Chrome'da kalir. Kucuk dosya zaten goz
+// acip kapayana kadar iner; onun icin pencere acmak faydadan cok rahatsizlik.
+// Boyut bilinmiyorsa yakalanir: bilinmeyen genelde buyuk dosya demek.
+const MIN_CAPTURE_BYTES = 5 * 1024 * 1024;   // 5 MB
+
 const MENUS = [
   { id: "akinti-link",  title: "Akıntı ile indir",              contexts: ["link"] },
   { id: "akinti-image", title: "Resmi Akıntı ile indir",        contexts: ["image"] },
@@ -91,25 +96,58 @@ chrome.downloads.onCreated.addListener(async (item) => {
   if (!url) return;                       // blob:, data:, "Sayfayı kaydet" vb. Chrome'da kalsın
   if (item.state !== "in_progress") return;
 
-  chrome.downloads.pause(item.id, () => {
+  chrome.downloads.pause(item.id, async () => {
     if (chrome.runtime.lastError) {
       // Duraklatilamiyor (cok kucuk dosya coktan bitmis olabilir): dokunma.
       return;
     }
 
+    // onCreated aninda Chrome dosya adini ve boyutu henuz bilmiyor olabiliyor;
+    // indirme duraklatilmis haldeyken bir kez daha soruyoruz. Adin GUID
+    // gorunmesinin sebebi buydu: adres bir GUID iken ad bos geliyordu.
+    const fresh = await settled(item.id);
+    const info = fresh || item;
+
+    const size = Number(info.totalBytes || info.fileSize || 0);
+    if (size > 0 && size < MIN_CAPTURE_BYTES) {
+      // Kucuk dosya: Chrome kendi indirsin, balonu da geri ac.
+      showDownloadUi();
+      chrome.downloads.resume(item.id, () => void chrome.runtime.lastError);
+      return;
+    }
+
     const msg = { url };
-    const ref = valid(item.referrer);
+    const ref = valid(info.referrer || item.referrer);
     if (ref) msg.referrer = ref;          // bazı dosya siteleri Referer başlığı ister
 
     // Chrome'un belirledigi dosya adi SADECE bir ipucu. Adres bir GUID ise
     // (dosya barindirma siteleri boyle yapiyor) dogru adi yalnizca Chrome bilir.
     // Masaustu tarafi bu adi temizler ve kullanici diyalogda gorup degistirebilir.
-    const base = baseName(item.filename);
+    const base = baseName(info.filename) || baseName(item.filename);
     if (base) msg.filename = base;
 
     handOver(item, msg);
   });
 });
+
+// Duraklatilmis indirmenin guncel halini getirir. Chrome adi biraz gecikmeli
+// yazdigi icin bir kez kisa sure bekleyip tekrar bakiyoruz.
+async function settled(id) {
+  for (let i = 0; i < 2; i++) {
+    try {
+      const [found] = await chrome.downloads.search({ id });
+      if (found && (baseName(found.filename) || Number(found.totalBytes) > 0)) return found;
+    } catch (e) {
+      console.warn("Akıntı: indirme bilgisi okunamadı.", e);
+      return null;
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  try {
+    const [found] = await chrome.downloads.search({ id });
+    return found || null;
+  } catch { return null; }
+}
 
 // Çerez toplama asenkron; devir mantığı tek yerde dursun diye ayrı fonksiyon.
 async function handOver(item, msg) {

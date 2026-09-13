@@ -17,7 +17,7 @@ yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise.
 
 İndirme penceresinde bunların hiçbiri **yok**: henüz inmemiş bir dosya hakkında
 peşinen karar vermek için sorulan onay kutuları, cevaplanması anlamsız sorular.
-- **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
+- **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli. Bir `.torrent` dosyasına çift tıkladığında Akıntı açılır; hangi dosyaların ineceğini tek tek seçebilirsin (indirme sürerken de değiştirilebilir). Ana pencerede **Torrent** bölmesi, satır sağ tıkında dosya seçimi, magnet kopyalama ve paylaşımı durdurma var.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
 ## Rahatsız etmeme garantileri
@@ -48,6 +48,10 @@ ya da content script eklenirse kurulum durur.
 | `downloads.ui` | Devralınca Chrome'un boş indirme balonunu gizlemek |
 | `storage` | Yakalama anahtarının durumu |
 | `cookies` + `<all_urls>` | **Oturum çerezlerini indirmeye taşımak** |
+
+Yakalama **5 MB'ın altındaki** indirmelere karışmaz: küçük dosya zaten göz açıp
+kapayana kadar iner, onun için pencere açmak faydadan çok rahatsızlık. Boyut
+bilinmiyorsa yakalanır — bilinmeyen genelde büyük dosya demek.
 
 Son satır bilinçli bir taviz. Gofile, Mega gibi siteler dosyayı yalnızca oturum
 çerezine karşılık veriyor; çerez olmadan sunucu dosya yerine kendi HTML sayfasını
@@ -153,6 +157,7 @@ scripts/              install / uninstall / fetch-aria2 / make-icons
 | `--request <yol>` | Tarayıcıdan devralınan indirme (çerez dosyadan okunur) |
 | `--mini <gid>` | Ortada açılan ilerleme penceresi (bitince yerini sonuç penceresi alır) |
 | `chrome-extension://...` | Chrome native messaging host |
+| `<yol>.torrent` | Torrent dosyası diyaloğu (Gezgin'den çift tıklama) |
 | `<gid> <n> <yol>` | aria2 indirme-sonrası kancası |
 | `--write-conf` | config.json'dan aria2.conf üret |
 

@@ -120,7 +120,7 @@ public partial class TorrentFilesWindow : Window
 
         var total = files.Sum(f => f.Length);
         TxtSub.Text = $"{files.Count} dosya, toplam {Format.Bytes(total)}. " +
-                      "Istemediklerinin isaretini kaldirip Secimi uygula de.";
+                      "İstemediklerinin işaretini kaldırıp Seçimi uygula de.";
         BtnApply.IsEnabled = true;
     }
 

@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -12,8 +12,9 @@ namespace Akinti.Ui;
 /// tepsi ikonu yok (istenmedi), bildirim yok (istenmedi), ana pencere de kapali.
 /// Dosya arka planda sessizce iniyordu.
 ///
-/// Odagi calmaz (ShowActivated=false), gorev cubugunda yer kaplamaz, sag altta
-/// durur. Kapatmak indirmeyi durdurmaz, sadece pencereyi gizler.
+/// Ekranin ortasinda acilir, cunku indirme diyalogunun yerini alir: diyalog
+/// kapanir, bu acilir. Kapatmak indirmeyi durdurmaz, sadece pencereyi gizler.
+/// Indirme bitince kendini kapatip yerine DoneWindow acar.
 /// </summary>
 public partial class MiniWindow : Window
 {
@@ -22,7 +23,6 @@ public partial class MiniWindow : Window
     private Aria2Client? _client;
     private string _gid;
     private bool _finished;
-    private string _filePath = "";
 
     public MiniWindow(Config cfg, string gid)
     {
@@ -39,20 +39,11 @@ public partial class MiniWindow : Window
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        PlaceBottomRight();
         if (!_cfg.IsConfigured) { Close(); return; }
 
         _client = new Aria2Client(_cfg);
         await RefreshAsync();
         _timer.Start();
-    }
-
-    /// <summary>Sag alt kose, gorev cubugunun uzerinde.</summary>
-    private void PlaceBottomRight()
-    {
-        var area = SystemParameters.WorkArea;
-        Left = area.Right - ActualWidth - 24;
-        Top = area.Bottom - ActualHeight - 24;
     }
 
     // ──────────── Yenileme ────────────
@@ -81,7 +72,6 @@ public partial class MiniWindow : Window
     {
         TxtName.Text = item.DisplayName;
         IcoFile.Text = Icons.ForFile(item.FilePath ?? item.DisplayName, item.IsTorrent);
-        if (!string.IsNullOrEmpty(item.FilePath)) _filePath = item.FilePath!;
 
         Bar.Value = item.Progress * 100;
         Bar.Foreground = item.Status == Aria2Status.Error
@@ -94,14 +84,8 @@ public partial class MiniWindow : Window
         switch (item.Status)
         {
             case Aria2Status.Complete:
-                ShowFinished("İndirme tamamlandı", "",
-                    Format.Bytes(item.TotalLength) + (host.Length > 0 ? "  ·  " + host : ""));
-                return;
-
             case Aria2Status.Error:
-                ShowFinished("İndirme başarısız", "",
-                    string.IsNullOrWhiteSpace(item.ErrorMessage)
-                        ? $"aria2 hata kodu {item.ErrorCode}" : item.ErrorMessage!);
+                HandOffToDone(item);
                 return;
 
             case Aria2Status.Removed:
@@ -144,27 +128,20 @@ public partial class MiniWindow : Window
         catch { TxtNote.Text = ""; }
     }
 
-    private void ShowFinished(string header, string glyph, string meta)
+    /// <summary>Ilerleme penceresini kapatip sonuc penceresini acar.
+    ///
+    /// Sira onemli: once yeni pencere acilir, sonra bu kapanir. Ters sirada
+    /// surecin son penceresi kapanmis olur ve uygulama sonlanir.</summary>
+    private void HandOffToDone(DownloadItem item)
     {
         if (_finished) return;
         _finished = true;
         _timer.Stop();
 
-        TxtHeader.Text = header;
-        TxtMeta.Text = meta;
-        TxtPct.Text = "";
-        PnlStats.Visibility = Visibility.Collapsed;
-        PnlActions.Visibility = Visibility.Collapsed;
-        TxtNote.Text = "";
-        BtnOpenFolder.Visibility = _filePath.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        try { new DoneWindow(item).Show(); }
+        catch (Exception ex) { Log.Error("Sonuc penceresi acilamadi", ex); }
 
-        // Basarili bittiyse kendiliginden kapansin; hata varsa kullanici gorsun diye kalsin.
-        if (header.Contains("tamamlandı", StringComparison.OrdinalIgnoreCase))
-        {
-            var close = new DispatcherTimer { Interval = TimeSpan.FromSeconds(12) };
-            close.Tick += (_, _) => { close.Stop(); Close(); };
-            close.Start();
-        }
+        Close();
     }
 
     // ──────────── Etkilesim ────────────
@@ -211,9 +188,4 @@ public partial class MiniWindow : Window
         Close();
     }
 
-    private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
-    {
-        if (_filePath.Length > 0) PostActions.OpenFolder(_filePath);
-        Close();
-    }
 }

@@ -7,7 +7,7 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 ## Ne yapar
 
 - **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
-- **Dosya türüne göre klasörleme.** `.zip` Arşivler'e, `.mp4` Video'ya, `.exe` Programlar'a. Kurallar ayarlardan düzenlenir.
+- **Her şey indirme klasörüne.** Türe göre otomatik alt klasörleme yok; klasörü istersen indirme penceresinden tek tek değiştirirsin.
 - **İndirince arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre.
 - **İndirince yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
 - **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
@@ -144,7 +144,7 @@ scripts/              install / uninstall / fetch-aria2 / make-icons
 | (boş) | Ana pencere |
 | `--new <url>` | İndirme diyaloğu |
 | `--request <yol>` | Tarayıcıdan devralınan indirme (çerez dosyadan okunur) |
-| `--mini <gid>` | Küçük ilerleme penceresi |
+| `--mini <gid>` | Ortada açılan ilerleme penceresi (bitince yerini sonuç penceresi alır) |
 | `chrome-extension://...` | Chrome native messaging host |
 | `<gid> <n> <yol>` | aria2 indirme-sonrası kancası |
 | `--write-conf` | config.json'dan aria2.conf üret |

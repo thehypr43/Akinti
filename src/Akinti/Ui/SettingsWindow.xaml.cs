@@ -1,6 +1,5 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -48,7 +47,6 @@ public partial class SettingsWindow : Window
     private void LoadValues()
     {
         TxtDownloadDir.Text = _cfg.DownloadDir;
-        TxtRules.Text = RulesToText(_cfg.TypeRules);
 
         SegFor(_cfg.MaxConcurrentDownloads).IsChecked = true;
         TxtConnections.Text = _cfg.ConnectionsPerDownload.ToString();
@@ -107,7 +105,6 @@ public partial class SettingsWindow : Window
         catch (Exception ex) { Warn("Indirme klasoru olusturulamadi: " + ex.Message); return; }
 
         _cfg.DownloadDir = dir;
-        _cfg.TypeRules = TextToRules(TxtRules.Text);
         _cfg.MaxConcurrentDownloads = maxConc;
         _cfg.ConnectionsPerDownload = conns;
         _cfg.GlobalSpeedLimitBytes = (long)limitKb * 1024;
@@ -254,41 +251,6 @@ public partial class SettingsWindow : Window
         }
     }
 
-    // ---------------- Kural metni ----------------
-
-    private static string RulesToText(Dictionary<string, string> rules)
-    {
-        var sb = new StringBuilder();
-        foreach (var group in rules.GroupBy(r => r.Value, StringComparer.OrdinalIgnoreCase)
-                                   .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase))
-            sb.AppendLine($"{string.Join(",", group.Select(g => g.Key))} = {group.Key}");
-        return sb.ToString().TrimEnd();
-    }
-
-    private static Dictionary<string, string> TextToRules(string text)
-    {
-        var rules = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var raw in text.Split('\n'))
-        {
-            var line = raw.Trim();
-            if (line.Length == 0 || line.StartsWith('#')) continue;
-
-            var idx = line.IndexOf('=');
-            if (idx <= 0) continue;
-
-            var folder = line[(idx + 1)..].Trim();
-            if (folder.Length == 0) continue;
-
-            foreach (var extRaw in line[..idx].Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var ext = extRaw.Trim();
-                if (ext.Length == 0) continue;
-                if (!ext.StartsWith('.')) ext = "." + ext;
-                rules[ext] = folder;
-            }
-        }
-        return rules;
-    }
 
     private bool TryParseInt(string text, int min, int max, out int value, string error)
     {

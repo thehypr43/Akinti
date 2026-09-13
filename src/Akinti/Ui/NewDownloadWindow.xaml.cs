@@ -1,7 +1,6 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace Akinti.Ui;
@@ -29,7 +28,6 @@ public partial class NewDownloadWindow : Window
         _userAgent = captured.UserAgent;
     }
     private CancellationTokenSource? _probeCts;
-    private bool _folderTouchedByUser;
     private bool _userEditedFileName;
     private bool _userTouchedExtract;
     private bool _loading = true;
@@ -49,9 +47,6 @@ public partial class NewDownloadWindow : Window
 
         ChkOpenFolder.IsChecked = _cfg.OpenFolderAfterDownloadDefault;
         TxtSeedRatio.Text = _cfg.SeedRatio.ToString(CultureInfo.InvariantCulture);
-
-        CmbFolder.AddHandler(TextBoxBase.TextChangedEvent,
-            new TextChangedEventHandler((_, _) => { if (!_loading) _folderTouchedByUser = true; }));
 
         TxtUrl.Text = url ?? "";
         TxtDialogTitle.Text = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
@@ -143,7 +138,6 @@ public partial class NewDownloadWindow : Window
         }
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(TxtFileName.Text) ? "—" : TxtFileName.Text;
         IcoFile.Text = Icons.ForFile(TxtFileName.Text, PnlTorrent.Visibility == Visibility.Visible);
-        ApplyFolderRule();
     }
 
     private void TxtFileName_TextChanged(object sender, TextChangedEventArgs e)
@@ -151,7 +145,6 @@ public partial class NewDownloadWindow : Window
         if (!_loading) _userEditedFileName = true;
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(TxtFileName.Text) ? "—" : TxtFileName.Text;
         IcoFile.Text = Icons.ForFile(TxtFileName.Text, PnlTorrent.Visibility == Visibility.Visible);
-        ApplyFolderRule();
         UpdateOptionAvailability();
     }
 
@@ -160,28 +153,6 @@ public partial class NewDownloadWindow : Window
         if (_loading) return;
         _userEditedFileName = false;
         await ProbeAsync();
-    }
-
-    /// <summary>Uzantiya gore klasor onerisi. Kullanici klasoru elle degistirdiyse dokunmaz.</summary>
-    private void ApplyFolderRule()
-    {
-        var name = TxtFileName.Text.Trim();
-        if (string.IsNullOrEmpty(name)) { TxtRuleHint.Text = ""; return; }
-
-        var folder = _cfg.ResolveFolderFor(name);
-        var ext = Path.GetExtension(name);
-
-        TxtRuleHint.Text = folder != _cfg.DownloadDir
-            ? $"{ext} kuralı bu dosyayı \"{Path.GetFileName(folder)}\" klasörüne yönlendiriyor."
-            : "";
-
-        if (!_folderTouchedByUser)
-        {
-            var suppress = _loading;
-            _loading = true;
-            CmbFolder.Text = folder;
-            _loading = suppress;
-        }
     }
 
     private void UpdateTorrentPanel(string url) =>
@@ -233,10 +204,7 @@ public partial class NewDownloadWindow : Window
             InitialDirectory = Directory.Exists(CmbFolder.Text) ? CmbFolder.Text : _cfg.DownloadDir,
         };
         if (dlg.ShowDialog(this) == true)
-        {
-            _folderTouchedByUser = true;
             CmbFolder.Text = dlg.FolderName;
-        }
     }
 
     // ──────────── Kuyruga ekleme ────────────

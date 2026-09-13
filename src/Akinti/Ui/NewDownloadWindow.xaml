@@ -106,8 +106,6 @@
                             <Button Grid.Column="1" Style="{StaticResource Btn.Ghost}" Content="Değiştir"
                                     Click="BtnBrowse_Click" Margin="10,0,0,0" Padding="10,7" />
                         </Grid>
-                        <TextBlock x:Name="TxtRuleHint" Style="{StaticResource T.Meta}" Margin="0,8,0,0"
-                                   TextWrapping="Wrap" Foreground="{StaticResource B.Accent2}" />
                     </StackPanel>
                 </Border>
 

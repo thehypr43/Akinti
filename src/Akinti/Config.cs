@@ -17,24 +17,9 @@ public sealed class Config
     public string DownloadDir { get; set; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
-    /// <summary>Uzanti -> alt klasor adi. Bos birakilan uzanti DownloadDir'e iner.</summary>
-    public Dictionary<string, string> TypeRules { get; set; } = new(StringComparer.OrdinalIgnoreCase)
-    {
-        [".zip"] = "Arsivler",  [".rar"] = "Arsivler",  [".7z"]  = "Arsivler",
-        [".tar"] = "Arsivler",  [".gz"]  = "Arsivler",  [".xz"]  = "Arsivler",
-        [".zst"] = "Arsivler",  [".bz2"] = "Arsivler",
-        [".exe"] = "Programlar",[".msi"] = "Programlar",[".msix"]= "Programlar",
-        [".mp4"] = "Video",     [".mkv"] = "Video",     [".avi"] = "Video",
-        [".mov"] = "Video",     [".webm"]= "Video",
-        [".mp3"] = "Muzik",     [".flac"]= "Muzik",     [".wav"] = "Muzik",
-        [".m4a"] = "Muzik",     [".opus"]= "Muzik",
-        [".pdf"] = "Belgeler",  [".docx"]= "Belgeler",  [".xlsx"]= "Belgeler",
-        [".epub"]= "Belgeler",  [".pptx"]= "Belgeler",
-        [".jpg"] = "Resimler",  [".jpeg"]= "Resimler",  [".png"] = "Resimler",
-        [".gif"] = "Resimler",  [".webp"]= "Resimler",  [".avif"]= "Resimler",
-        [".iso"] = "Imajlar",   [".img"] = "Imajlar",
-        [".torrent"] = "Torrent",
-    };
+    // Dosya turune gore otomatik alt klasorleme BILEREK YOK: kullanici her seyin
+    // dogrudan DownloadDir'e inmesini istedi. Klasor yalnizca diyalogdan elle
+    // degistirilebilir.
 
     public List<string> RecentFolders { get; set; } = new();
 
@@ -99,15 +84,6 @@ public sealed class Config
         var tmp = AppPaths.ConfigFile + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(this, JsonOpts));
         File.Move(tmp, AppPaths.ConfigFile, overwrite: true);
-    }
-
-    /// <summary>Uzantiya gore hedef klasor. Kural yoksa DownloadDir.</summary>
-    public string ResolveFolderFor(string fileName)
-    {
-        var ext = Path.GetExtension(fileName);
-        if (!string.IsNullOrEmpty(ext) && TypeRules.TryGetValue(ext, out var sub) && !string.IsNullOrWhiteSpace(sub))
-            return Path.Combine(DownloadDir, sub);
-        return DownloadDir;
     }
 
     public void PushRecentFolder(string folder)

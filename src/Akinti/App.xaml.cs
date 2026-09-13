@@ -84,6 +84,15 @@ public partial class App : Application
             return;
         }
 
+        // --- Var olan bir indirmenin ilerleme penceresi ---
+        var miniIndex = Array.IndexOf(args, "--mini");
+        if (miniIndex >= 0 && miniIndex + 1 < args.Length)
+        {
+            ShutdownMode = ShutdownMode.OnLastWindowClose;
+            new MiniWindow(Config.Load(), args[miniIndex + 1]).Show();
+            return;
+        }
+
         var newIndex = Array.IndexOf(args, "--new");
         if (newIndex >= 0 && newIndex + 1 < args.Length)
         {

@@ -299,9 +299,14 @@ public partial class NewDownloadWindow : Window
             var gid = await DownloadService.EnqueueAsync(client, _cfg, req);
 
             var pickFiles = PnlTorrent.Visibility == Visibility.Visible && ChkPickFiles.IsChecked == true;
-            Close();
 
+            // Ilerleme penceresi diyalogdan ONCE acilir: bu surecin son penceresi
+            // kapaninca uygulama sonlaniyor, once yenisini acmazsak sureç olur ve
+            // indirme baslar ama kullanici hicbir sey gormez.
+            if (!paused) new MiniWindow(_cfg, gid).Show();
             if (pickFiles) new TorrentFilesWindow(_cfg, gid).Show();
+
+            Close();
         }
         catch (Exception ex)
         {

@@ -143,6 +143,8 @@ scripts/              install / uninstall / fetch-aria2 / make-icons
 |---|---|
 | (boş) | Ana pencere |
 | `--new <url>` | İndirme diyaloğu |
+| `--request <yol>` | Tarayıcıdan devralınan indirme (çerez dosyadan okunur) |
+| `--mini <gid>` | Küçük ilerleme penceresi |
 | `chrome-extension://...` | Chrome native messaging host |
 | `<gid> <n> <yol>` | aria2 indirme-sonrası kancası |
 | `--write-conf` | config.json'dan aria2.conf üret |

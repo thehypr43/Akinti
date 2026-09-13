@@ -1,0 +1,123 @@
+<Window x:Class="Akinti.Ui.MiniWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Akıntı" Width="392" SizeToContent="Height"
+        Icon="/akinti.ico"
+        Background="{StaticResource B.Bg}"
+        WindowStyle="None" ResizeMode="NoResize"
+        ShowActivated="False" Topmost="True" ShowInTaskbar="False"
+        TextOptions.TextFormattingMode="Ideal"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="0"
+                            GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Border BorderBrush="{StaticResource B.Neutral800}" BorderThickness="1"
+            Background="{StaticResource B.Bg}">
+        <StackPanel Margin="14,10,10,14">
+
+            <!-- ═══ Başlık ═══ -->
+            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown" Background="Transparent"
+                  Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                               Foreground="{StaticResource B.Accent}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="TxtHeader" Text="İndiriliyor" Margin="9,0,0,0"
+                               FontSize="13" FontWeight="Medium" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource Btn.Caption}" Width="32" Height="26"
+                            Click="BtnExpand_Click" ToolTip="Ana pencereyi aç">
+                        <TextBlock Text="&#xE740;" FontFamily="{StaticResource F.Icon}" FontSize="11"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button Style="{StaticResource Btn.Caption}" Width="32" Height="26"
+                            Click="BtnHide_Click" ToolTip="Gizle (indirme sürer)">
+                        <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource F.Icon}" FontSize="11"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══ Dosya ═══ -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource FileTile}" VerticalAlignment="Center">
+                    <TextBlock x:Name="IcoFile" Text="&#xE7C3;" Style="{StaticResource T.Icon}"
+                               FontSize="15" Foreground="{StaticResource B.TextMuted}" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="12,0,10,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtName" Text="—" FontSize="13" FontWeight="Medium"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="TxtMeta" Style="{StaticResource T.Meta}" Margin="0,3,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="2" x:Name="TxtPct" Text="0%" FontSize="17" FontWeight="Medium"
+                           VerticalAlignment="Center" />
+            </Grid>
+
+            <ProgressBar x:Name="Bar" Style="{StaticResource Bar}" Maximum="100" Value="0"
+                         Margin="0,12,0,0" />
+
+            <!-- ═══ Sayılar ═══ -->
+            <Grid x:Name="PnlStats" Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="PARÇA" Style="{StaticResource T.SectionLabel}" />
+                    <TextBlock x:Name="TxtParts" Text="—" FontSize="13" Margin="0,3,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="KALAN" Style="{StaticResource T.SectionLabel}" />
+                    <TextBlock x:Name="TxtRemaining" Text="—" FontSize="13" Margin="0,3,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="HIZ" Style="{StaticResource T.SectionLabel}" />
+                    <TextBlock x:Name="TxtSpeed" Text="—" FontSize="13" Margin="0,3,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="3">
+                    <TextBlock Text="KALAN SÜRE" Style="{StaticResource T.SectionLabel}" />
+                    <TextBlock x:Name="TxtEta" Text="—" FontSize="13" Margin="0,3,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══ Alt sıra ═══ -->
+            <Grid Margin="0,14,0,0">
+                <TextBlock x:Name="TxtNote" Style="{StaticResource T.Meta}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" Margin="0,0,90,0" />
+                <StackPanel x:Name="PnlActions" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnToggle" Style="{StaticResource Btn.Icon}" Width="30" Height="30"
+                            Click="BtnToggle_Click">
+                        <TextBlock x:Name="IcoToggle" Text="&#xE769;" FontFamily="{StaticResource F.Icon}"
+                                   FontSize="12"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button x:Name="BtnCancel" Style="{StaticResource Btn.Icon}" Width="30" Height="30"
+                            Click="BtnCancel_Click">
+                        <TextBlock Text="&#xE711;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                </StackPanel>
+                <Button x:Name="BtnOpenFolder" Style="{StaticResource Btn.Ghost}" Content="Klasörü aç"
+                        HorizontalAlignment="Right" Padding="10,6" Visibility="Collapsed"
+                        Click="BtnOpenFolder_Click" />
+            </Grid>
+
+        </StackPanel>
+    </Border>
+</Window>

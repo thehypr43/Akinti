@@ -24,6 +24,9 @@ public sealed class DownloadItem
     public string? TorrentName { get; init; }
     public int NumSeeders { get; init; }
 
+    /// <summary>Su an acik olan baglanti (parca) sayisi.</summary>
+    public int Connections { get; init; }
+
     public bool IsTorrent => !string.IsNullOrEmpty(InfoHash);
 
     /// <summary>Torrent ise torrent adi, degilse dosya adi. Ikisi de yoksa URL'den tahmin.</summary>
@@ -52,7 +55,8 @@ public sealed class Aria2Client : IDisposable
     private static readonly string[] StatusKeys =
     [
         "gid", "status", "totalLength", "completedLength", "downloadSpeed", "uploadSpeed",
-        "errorCode", "errorMessage", "dir", "files", "infoHash", "numSeeders", "bittorrent"
+        "errorCode", "errorMessage", "dir", "files", "infoHash", "numSeeders", "bittorrent",
+        "connections"
     ];
 
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
@@ -326,6 +330,7 @@ public sealed class Aria2Client : IDisposable
             InfoHash = Str(el, "infoHash"),
             TorrentName = torrentName,
             NumSeeders = (int)Num(el, "numSeeders"),
+            Connections = (int)Num(el, "connections"),
         };
     }
 

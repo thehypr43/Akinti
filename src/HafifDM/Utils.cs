@@ -132,6 +132,31 @@ public static class RemoteProbe
     }
 }
 
+/// <summary>
+/// Segoe Fluent Icons karakterleri. Windows 11'de kurulu geldigi icin
+/// ayrica bir ikon fontu tasimiyoruz.
+/// </summary>
+public static class Icons
+{
+    public static string ForFile(string nameOrPath, bool isTorrent = false)
+    {
+        if (isTorrent) return "\uE896";
+        return Path.GetExtension(nameOrPath).ToLowerInvariant() switch
+        {
+            ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".wmv" => "\uE714",
+            ".mp3" or ".flac" or ".wav" or ".m4a" or ".opus" or ".ogg" => "\uE8D6",
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" or ".avif" or ".bmp" => "\uEB9F",
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" or ".xz" or ".zst" or ".bz2" => "\uF012",
+            ".exe" or ".msi" or ".msix" => "\uE74C",
+            ".bat" or ".cmd" or ".ps1" => "\uE756",
+            ".iso" or ".img" => "\uE958",
+            ".torrent" => "\uE896",
+            ".pdf" or ".docx" or ".xlsx" or ".pptx" or ".epub" or ".txt" => "\uE8A5",
+            _ => "\uE7C3",
+        };
+    }
+}
+
 public static class Format
 {
     private static readonly string[] Units = ["B", "KB", "MB", "GB", "TB"];

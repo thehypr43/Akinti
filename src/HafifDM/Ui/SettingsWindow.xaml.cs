@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace HafifDM.Ui;
 
@@ -17,14 +19,41 @@ public partial class SettingsWindow : Window
         LoadValues();
     }
 
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+    }
+
+    /// <summary>Segmentli secim: 1/2/3/4/8. Baska bir deger varsa en yakini isaretlenir.</summary>
+    private RadioButton SegFor(int value) => value switch
+    {
+        1 => Seg1, 2 => Seg2, 3 => Seg3, 4 => Seg4, _ => Seg8,
+    };
+
+    private int SegValue() =>
+        Seg1.IsChecked == true ? 1
+        : Seg2.IsChecked == true ? 2
+        : Seg3.IsChecked == true ? 3
+        : Seg4.IsChecked == true ? 4
+        : 8;
+
+    private void TxtGlobalLimit_TextChanged(object sender, TextChangedEventArgs e) => UpdateCapLabel();
+
+    private void UpdateCapLabel() =>
+        LblCap.Text = "Toplam limit — " +
+            (int.TryParse(TxtGlobalLimit.Text.Trim(), out var kb) && kb > 0
+                ? Format.Speed((long)kb * 1024)
+                : "Sınırsız");
+
     private void LoadValues()
     {
         TxtDownloadDir.Text = _cfg.DownloadDir;
         TxtRules.Text = RulesToText(_cfg.TypeRules);
 
-        TxtMaxConcurrent.Text = _cfg.MaxConcurrentDownloads.ToString();
+        SegFor(_cfg.MaxConcurrentDownloads).IsChecked = true;
         TxtConnections.Text = _cfg.ConnectionsPerDownload.ToString();
         TxtGlobalLimit.Text = (_cfg.GlobalSpeedLimitBytes / 1024).ToString();
+        UpdateCapLabel();
 
         var found = Archivers.DetectAll();
         foreach (var a in found) CmbArchiver.Items.Add(a.Path);
@@ -55,16 +84,15 @@ public partial class SettingsWindow : Window
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
-        if (!TryParseInt(TxtMaxConcurrent.Text, 1, 20, out var maxConc,
-                         "Ayni anda indirme sayisi 1-20 arasinda olmali.")) return;
+        var maxConc = SegValue();
         if (!TryParseInt(TxtConnections.Text, 1, 16, out var conns,
-                         "Baglanti sayisi 1-16 arasinda olmali.")) return;
+                         "Bağlantı sayısı 1-16 arasında olmalı.")) return;
         if (!TryParseInt(TxtGlobalLimit.Text, 0, int.MaxValue, out var limitKb,
-                         "Toplam hiz limiti negatif olamaz.")) return;
+                         "Toplam hız limiti negatif olamaz.")) return;
         if (!TryParseInt(TxtTorrentPort.Text, 1024, 65535, out var btPort,
-                         "Torrent portu 1024-65535 arasinda olmali.")) return;
+                         "Torrent portu 1024-65535 arasında olmalı.")) return;
         if (!TryParseInt(TxtSeedTime.Text, 0, int.MaxValue, out var seedTime,
-                         "Paylasim suresi negatif olamaz.")) return;
+                         "Paylaşım süresi negatif olamaz.")) return;
 
         if (!double.TryParse(TxtSeedRatio.Text.Trim(), NumberStyles.Float,
                              CultureInfo.InvariantCulture, out var ratio) || ratio < 0)
@@ -270,5 +298,5 @@ public partial class SettingsWindow : Window
     }
 
     private void Warn(string message) =>
-        MessageBox.Show(this, message, "HafifDM", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show(this, message, "Akıntı", MessageBoxButton.OK, MessageBoxImage.Warning);
 }

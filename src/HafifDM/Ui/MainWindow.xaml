@@ -1,156 +1,418 @@
 <Window x:Class="HafifDM.Ui.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="HafifDM" Height="620" Width="1000" MinHeight="420" MinWidth="760"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Akıntı" Height="660" Width="1040" MinHeight="460" MinWidth="880"
         Icon="/hafifdm.ico"
         Background="{StaticResource B.Bg}"
+        WindowStyle="None"
         WindowStartupLocation="CenterScreen"
+        TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
 
+    <shell:WindowChrome.WindowChrome>
+        <!-- Kendi baslik cubugumuz var; CaptionHeight 0 ki surukleme kodumuz devralsin.
+             ResizeBorderThickness pencerenin kenardan boyutlandirilmasini korur. -->
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6"
+                            GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="186" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <!-- ================= Sol kenar ================= -->
-        <Border Grid.Column="0" Background="{StaticResource B.Surface}"
-                BorderBrush="{StaticResource B.Border}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="12">
-                <TextBlock DockPanel.Dock="Top" Text="HafifDM" Style="{StaticResource T.Title}"
-                           Margin="10,6,0,16" />
+        <!-- ═══════════════ Baslik cubugu ═══════════════ -->
+        <Border Grid.Row="0" Height="46" Background="Transparent"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="14,0,6,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="24" Height="24" CornerRadius="{StaticResource R.Sm}"
+                            Background="{StaticResource B.Surface}"
+                            BorderBrush="{StaticResource B.Divider}" BorderThickness="1">
+                        <TextBlock Text="&#xE896;" Style="{StaticResource T.Icon}" FontSize="12"
+                                   Foreground="{StaticResource B.Accent}" />
+                    </Border>
+                    <TextBlock Text="Akıntı" Margin="10,0,0,0" FontSize="14" FontWeight="Medium"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="—" Margin="9,0" Style="{StaticResource T.Muted}"
+                               VerticalAlignment="Center" />
+                    <TextBlock x:Name="TxtHeaderSummary" Style="{StaticResource T.Muted}"
+                               VerticalAlignment="Center" Text="hazır" />
+                </StackPanel>
 
-                <Button DockPanel.Dock="Bottom" x:Name="BtnSettings" Content="Ayarlar"
-                        Click="BtnSettings_Click" Margin="0,10,0,0" />
+                <!-- Icerik olarak duz metin verilemez: ortuk TextBlock stili font ailesini
+                     ezip ikonu bos kareye cevirir. Her biri acik bir TextBlock. -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource Btn.Caption}" Click="BtnMinimize_Click">
+                        <TextBlock Text="&#xE921;" FontFamily="{StaticResource F.Icon}" FontSize="11"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button Style="{StaticResource Btn.Caption}" Click="BtnMaximize_Click">
+                        <TextBlock x:Name="IcoMaximize" Text="&#xE922;" FontFamily="{StaticResource F.Icon}"
+                                   FontSize="11"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button Style="{StaticResource Btn.CaptionClose}" Click="BtnClose_Click">
+                        <TextBlock Text="&#xE8BB;" FontFamily="{StaticResource F.Icon}" FontSize="11"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
-                <Border DockPanel.Dock="Bottom" Style="{StaticResource Card}" Margin="0,10,0,0" Padding="10">
-                    <StackPanel>
-                        <TextBlock x:Name="TxtEngine" Text="Motor kontrol ediliyor..."
-                                   Style="{StaticResource T.Dim}" TextWrapping="Wrap" />
-                        <TextBlock x:Name="TxtTotalSpeed" Text="" Style="{StaticResource T.Dim}"
-                                   Margin="0,6,0,0" />
+        <!-- ═══════════════ Govde ═══════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="186" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ─────── Kenar cubugu ─────── -->
+            <DockPanel Grid.Column="0" Margin="14,0,8,14">
+
+                <Button DockPanel.Dock="Top" Style="{StaticResource Btn.Primary}"
+                        Click="BtnNew_Click" Padding="10,8" HorizontalContentAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="Yeni indirme" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   FontSize="14" FontWeight="Medium" />
                     </StackPanel>
-                </Border>
+                </Button>
+
+                <TextBlock DockPanel.Dock="Top" Text="AKTARIMLAR" Style="{StaticResource T.SectionLabel}"
+                           Margin="10,18,0,7" />
 
                 <StackPanel DockPanel.Dock="Top">
-                    <RadioButton x:Name="NavAll"       Style="{StaticResource Btn.Nav}" Content="Tumu"
-                                 IsChecked="True" Checked="Nav_Checked" Tag="All" />
-                    <RadioButton x:Name="NavActive"    Style="{StaticResource Btn.Nav}" Content="Devam eden"
-                                 Checked="Nav_Checked" Tag="Active" />
-                    <RadioButton x:Name="NavCompleted" Style="{StaticResource Btn.Nav}" Content="Tamamlanan"
-                                 Checked="Nav_Checked" Tag="Completed" />
-                    <RadioButton x:Name="NavFailed"    Style="{StaticResource Btn.Nav}" Content="Basarisiz"
-                                 Checked="Nav_Checked" Tag="Failed" />
-                    <RadioButton x:Name="NavTorrent"   Style="{StaticResource Btn.Nav}" Content="Torrent"
-                                 Checked="Nav_Checked" Tag="Torrent" />
+                    <RadioButton x:Name="NavActive" Style="{StaticResource Nav.Item}" Tag="Active"
+                                 IsChecked="True" Checked="Nav_Checked">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                           VerticalAlignment="Center" Width="20" />
+                                <TextBlock Text="Etkin" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock x:Name="CntActive" Text="0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Style="{StaticResource T.Meta}" />
+                        </Grid>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavQueue" Style="{StaticResource Nav.Item}" Tag="Queue"
+                                 Checked="Nav_Checked">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8FD;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                           VerticalAlignment="Center" Width="20" />
+                                <TextBlock Text="Kuyruk" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock x:Name="CntQueue" Text="0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Style="{StaticResource T.Meta}" />
+                        </Grid>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavDone" Style="{StaticResource Nav.Item}" Tag="Done"
+                                 Checked="Nav_Checked">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE930;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                           VerticalAlignment="Center" Width="20" />
+                                <TextBlock Text="Tamamlanan" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock x:Name="CntDone" Text="0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Style="{StaticResource T.Meta}" />
+                        </Grid>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavFailed" Style="{StaticResource Nav.Item}" Tag="Failed"
+                                 Checked="Nav_Checked">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEA39;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                           VerticalAlignment="Center" Width="20" />
+                                <TextBlock Text="Başarısız" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                            </StackPanel>
+                            <TextBlock x:Name="CntFailed" Text="0" HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" Style="{StaticResource T.Meta}" />
+                        </Grid>
+                    </RadioButton>
+
+                    <RadioButton x:Name="NavSettings" Style="{StaticResource Nav.Item}" Tag="Settings"
+                                 Checked="Nav_Checked">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE713;" FontFamily="{StaticResource F.Icon}" FontSize="14"
+                                       VerticalAlignment="Center" Width="20" />
+                            <TextBlock Text="Ayarlar" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="14" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+
+                <!-- Alt bilgi karti: disk ve hiz siniri -->
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Grid Margin="10,0,4,7">
+                        <TextBlock x:Name="TxtDiskName" Text="Downloads" Style="{StaticResource T.Meta}" />
+                        <TextBlock x:Name="TxtDiskFree" Text="—" Style="{StaticResource T.Meta}"
+                                   HorizontalAlignment="Right" />
+                    </Grid>
+                    <ProgressBar x:Name="BarDisk" Style="{StaticResource Bar.Disk}" Margin="10,0,4,0"
+                                 Maximum="100" Value="0" />
+                    <Rectangle Style="{StaticResource Hr}" Margin="6,12" />
+                    <StackPanel Orientation="Horizontal" Margin="10,0,4,0">
+                        <TextBlock Text="&#xE945;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                   Foreground="{StaticResource B.TextFaint}" VerticalAlignment="Center" />
+                        <TextBlock Text="Hız sınırı" Margin="7,0,0,0" Style="{StaticResource T.Meta}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="TxtCap" Text="Sınırsız" Style="{StaticResource T.Meta}"
+                                   Foreground="{StaticResource B.Accent}" VerticalAlignment="Center"
+                                   HorizontalAlignment="Right" Margin="10,0,0,0" />
+                    </StackPanel>
                 </StackPanel>
 
                 <Grid />
             </DockPanel>
-        </Border>
 
-        <!-- ================= Sag icerik ================= -->
-        <DockPanel Grid.Column="1" Margin="16">
+            <!-- ─────── Ana bolum ─────── -->
+            <DockPanel Grid.Column="1" Margin="6,0,14,0">
 
-            <!-- Arac cubugu -->
-            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,14">
-                <Button Style="{StaticResource Btn.Primary}" Content="Yeni indirme"
-                        Click="BtnNew_Click" Margin="0,0,8,6" />
-                <Button x:Name="BtnPause"  Content="Duraklat"    Click="BtnPause_Click"  Margin="0,0,8,6" />
-                <Button x:Name="BtnResume" Content="Devam"       Click="BtnResume_Click" Margin="0,0,8,6" />
-                <Button x:Name="BtnCancel" Content="Iptal"       Click="BtnCancel_Click" Margin="0,0,8,6" />
-                <Button x:Name="BtnRetry"  Content="Yeniden dene" Click="BtnRetry_Click" Margin="0,0,8,6" />
-                <Button x:Name="BtnOpen"   Content="Klasoru ac"  Click="BtnOpen_Click"   Margin="0,0,8,6" />
-                <Button x:Name="BtnRemove" Content="Listeden sil" Click="BtnRemove_Click" Margin="0,0,0,6" />
-            </WrapPanel>
+                <!-- Baglanti yapistirma cubugu -->
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-            <!-- Bos durum -->
-            <TextBlock x:Name="TxtEmpty" DockPanel.Dock="Top" Visibility="Collapsed"
-                       Style="{StaticResource T.Dim}" Margin="4,24,0,0"
-                       Text="Burada henuz bir sey yok. Tarayicida bir baglantiya sag tiklayip
-                             &quot;HafifDM ile indir&quot; secebilir veya yukaridaki Yeni indirme dugmesini kullanabilirsin."
-                       TextWrapping="Wrap" />
-
-            <ListView x:Name="List" Background="Transparent" BorderThickness="0"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      SelectionChanged="List_SelectionChanged"
-                      VirtualizingPanel.IsVirtualizing="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling">
-
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,0,0,8" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="BorderThickness" Value="0" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListViewItem">
-                                    <Border x:Name="bd" Background="{StaticResource B.Surface}"
-                                            BorderBrush="{StaticResource B.Border}" BorderThickness="1"
-                                            CornerRadius="{StaticResource R.CornerRadius}" Padding="14,11">
-                                        <ContentPresenter />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="bd" Property="Background"
-                                                    Value="{StaticResource B.SurfaceAlt}" />
-                                        </Trigger>
-                                        <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="bd" Property="BorderBrush"
-                                                    Value="{StaticResource B.Accent}" />
-                                            <Setter TargetName="bd" Property="Background"
-                                                    Value="{StaticResource B.SurfaceAlt}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListView.ItemContainerStyle>
-
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                    <Border Grid.Column="0" Background="{StaticResource B.Surface}"
+                            BorderBrush="{StaticResource B.Divider}" BorderThickness="1"
+                            CornerRadius="{StaticResource R.Md}" MinHeight="38">
+                        <Grid Margin="12,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Name}"
-                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StateText}"
-                                       Style="{StaticResource T.Dim}" Margin="12,0,0,0" />
-
-                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Bar}"
-                                         Value="{Binding Percent, Mode=OneWay}" Maximum="100"
-                                         Margin="0,8,0,7" />
-
-                            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding SubText}"
-                                       Style="{StaticResource T.Dim}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="0" Text="&#xE71B;" FontFamily="{StaticResource F.Icon}"
+                                       FontSize="13" Foreground="{StaticResource B.TextFaint}"
+                                       VerticalAlignment="Center" />
+                            <Grid Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock x:Name="TxtUrlPlaceholder"
+                                           Text="İndirmeye başlamak için bağlantı yapıştırın"
+                                           Style="{StaticResource T.Muted}" VerticalAlignment="Center"
+                                           IsHitTestVisible="False" />
+                                <TextBox x:Name="TxtUrl" Background="Transparent" BorderThickness="0"
+                                         MinHeight="0" Padding="0" FontSize="14"
+                                         TextChanged="TxtUrl_TextChanged" KeyDown="TxtUrl_KeyDown" />
+                            </Grid>
+                            <Border Grid.Column="2" CornerRadius="{StaticResource R.Sm}" Padding="6,2"
+                                    Background="#14E9E9ED" VerticalAlignment="Center">
+                                <TextBlock Text="Ctrl+V" FontSize="11"
+                                           Foreground="{StaticResource B.TextFaint}" />
+                            </Border>
                         </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
+                    </Border>
 
-                <ListView.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Klasoru ac"               Click="BtnOpen_Click" />
-                        <MenuItem Header="Arsivi cikar"             Click="CtxExtract_Click" />
-                        <MenuItem Header="Yonetici olarak calistir" Click="CtxRunAdmin_Click" />
-                        <Separator />
-                        <MenuItem Header="Adresi kopyala"           Click="CtxCopyUrl_Click" />
-                        <MenuItem Header="Torrent hash kopyala"     Click="CtxCopyHash_Click" />
-                        <Separator />
-                        <MenuItem Header="Listeden sil"             Click="BtnRemove_Click" />
-                    </ContextMenu>
-                </ListView.ContextMenu>
-            </ListView>
-        </DockPanel>
+                    <Button Grid.Column="1" Style="{StaticResource Btn.Primary}" Margin="9,0,0,0"
+                            Click="BtnAddUrl_Click" Padding="12,7">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="Ekle" Margin="7,0,0,0" VerticalAlignment="Center"
+                                       FontSize="14" FontWeight="Medium" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2" x:Name="BtnToggleAll" Style="{StaticResource Btn.Secondary}"
+                            Margin="9,0,0,0" Click="BtnToggleAll_Click" Padding="12,7">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="IcoToggleAll" Text="&#xE769;" FontFamily="{StaticResource F.Icon}"
+                                       FontSize="12" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TxtToggleAll" Text="Tümünü duraklat" Margin="7,0,0,0"
+                                       VerticalAlignment="Center" FontSize="14" FontWeight="Medium" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Durum satiri (en alt) -->
+                <Grid DockPanel.Dock="Bottom" Margin="0,10,0,12">
+                    <TextBlock x:Name="TxtStatusLeft" Style="{StaticResource T.Meta}" />
+                    <TextBlock x:Name="TxtStatusRight" Style="{StaticResource T.Meta}"
+                               HorizontalAlignment="Right" />
+                </Grid>
+
+                <!-- Bolum basligi + toplam hiz + hiz grafigi -->
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtSectionTitle" Text="Etkin" Style="{StaticResource T.H4}" />
+                        <TextBlock x:Name="TxtSectionSub" Style="{StaticResource T.Muted}" Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="PnlSpeed" Orientation="Horizontal" HorizontalAlignment="Right"
+                                VerticalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,14,0">
+                            <TextBlock Text="TOPLAM HIZ" Style="{StaticResource T.SectionLabel}"
+                                       HorizontalAlignment="Right" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,1,0,0">
+                                <TextBlock x:Name="TxtTotalSpeed" Text="0.0" FontSize="26" FontWeight="Medium" />
+                                <TextBlock x:Name="TxtTotalSpeedUnit" Text="MB/s" Style="{StaticResource T.Meta}"
+                                           VerticalAlignment="Bottom" Margin="4,0,0,4" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border Width="168" Height="40" Background="#0DE9E9ED"
+                                CornerRadius="{StaticResource R.Sm}" ClipToBounds="True">
+                            <Canvas x:Name="SparkCanvas" Width="168" Height="40">
+                                <Polygon x:Name="SparkArea" Fill="{StaticResource B.SparkFill}" />
+                                <Polyline x:Name="SparkLine" Stroke="{StaticResource B.Accent}"
+                                          StrokeThickness="1.5" StrokeLineJoin="Round" />
+                            </Canvas>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Bos durum -->
+                <StackPanel x:Name="PnlEmpty" Visibility="Collapsed" VerticalAlignment="Center"
+                            HorizontalAlignment="Center" Margin="0,0,0,40">
+                    <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="34"
+                               Foreground="{StaticResource B.Neutral700}" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="TxtEmptyTitle" Text="İndirme yok" FontSize="16" FontWeight="Medium"
+                               HorizontalAlignment="Center" Margin="0,14,0,0" />
+                    <TextBlock x:Name="TxtEmptySub" Style="{StaticResource T.Muted}" MaxWidth="360"
+                               TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="Tarayıcıda bir bağlantıya sağ tıklayıp Akıntı ile indir seçin ya da yukarıya bağlantı yapıştırın." />
+                </StackPanel>
+
+                <!-- Aktarim listesi -->
+                <ListBox x:Name="List" Style="{StaticResource List.Plain}"
+                         SelectionChanged="List_SelectionChanged">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,0,0,2" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="bd" Background="Transparent"
+                                                CornerRadius="{StaticResource R.Md}" Padding="8,9">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="bd" Property="Background" Value="#0AE9E9ED" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="bd" Property="Background"
+                                                        Value="{StaticResource B.Surface}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Dosya turu karesi -->
+                                <Border Grid.Column="0" Style="{StaticResource FileTile}" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding IconGlyph}" Style="{StaticResource T.Icon}"
+                                               FontSize="15" Foreground="{StaticResource B.TextMuted}" />
+                                </Border>
+
+                                <!-- Ad, ilerleme, ust veri -->
+                                <Grid Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" FontSize="14"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="430"
+                                                   VerticalAlignment="Center" />
+                                        <Border Style="{StaticResource Tag}" Margin="9,0,0,0"
+                                                Background="{Binding TagBackground}">
+                                            <TextBlock Text="{Binding TagText}"
+                                                       Style="{StaticResource T.TagText}"
+                                                       Foreground="{Binding TagForeground}" />
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Grid Grid.Row="1" Margin="0,8,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ProgressBar Grid.Column="0" Style="{StaticResource Bar}"
+                                                     Maximum="100" Value="{Binding Percent, Mode=OneWay}"
+                                                     Foreground="{Binding BarBrush}"
+                                                     VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding PercentText}"
+                                                   Style="{StaticResource T.Meta}" Margin="12,0,0,0"
+                                                   MinWidth="34" TextAlignment="Right" />
+                                    </Grid>
+
+                                    <TextBlock Grid.Row="2" Text="{Binding MetaText}"
+                                               Style="{StaticResource T.Meta}" Margin="0,7,0,0"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
+
+                                <!-- Hiz ve kalan sure -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center"
+                                            HorizontalAlignment="Right" MinWidth="92" Margin="0,0,10,0">
+                                    <TextBlock Text="{Binding SpeedText}" FontSize="14" FontWeight="Medium"
+                                               HorizontalAlignment="Right" />
+                                    <TextBlock Text="{Binding EtaText}" Style="{StaticResource T.Meta}"
+                                               HorizontalAlignment="Right" Margin="0,2,0,0" />
+                                </StackPanel>
+
+                                <!-- Satir eylemleri -->
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource Btn.Icon}" Click="RowToggle_Click"
+                                            Tag="{Binding}" Visibility="{Binding ToggleVisibility}">
+                                        <TextBlock Text="{Binding ToggleGlyph}"
+                                                   FontFamily="{StaticResource F.Icon}" FontSize="13"
+                                                   Foreground="{Binding Foreground,
+                                                                RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    </Button>
+                                    <Button Style="{StaticResource Btn.Icon}" Click="RowRemove_Click"
+                                            Tag="{Binding}">
+                                        <TextBlock Text="&#xE711;" FontFamily="{StaticResource F.Icon}"
+                                                   FontSize="13"
+                                                   Foreground="{Binding Foreground,
+                                                                RelativeSource={RelativeSource AncestorType=Button}}" />
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Klasörü aç"               Click="CtxOpen_Click" />
+                            <MenuItem Header="Arşivi çıkar"             Click="CtxExtract_Click" />
+                            <MenuItem Header="Yönetici olarak çalıştır" Click="CtxRunAdmin_Click" />
+                            <Separator />
+                            <MenuItem Header="Yeniden dene"             Click="CtxRetry_Click" />
+                            <MenuItem Header="Adresi kopyala"           Click="CtxCopyUrl_Click" />
+                            <MenuItem Header="Torrent hash kopyala"     Click="CtxCopyHash_Click" />
+                            <Separator />
+                            <MenuItem Header="Listeden sil"             Click="RowRemove_Click" />
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+            </DockPanel>
+        </Grid>
     </Grid>
 </Window>

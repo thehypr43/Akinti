@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 
 namespace HafifDM.Ui;
 
@@ -139,7 +140,7 @@ public partial class TorrentFilesWindow : Window
         if (chosen.Count == 0)
         {
             MessageBox.Show(this, "Hicbir dosya secili degil. En az birini sec ya da indirmeyi iptal et.",
-                "HafifDM", MessageBoxButton.OK, MessageBoxImage.Warning);
+                "Akıntı", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -158,9 +159,14 @@ public partial class TorrentFilesWindow : Window
         {
             BtnApply.IsEnabled = true;
             Log.Error("Dosya secimi uygulanamadi", ex);
-            MessageBox.Show(this, "Secim uygulanamadi: " + ex.Message, "HafifDM",
+            MessageBox.Show(this, "Secim uygulanamadi: " + ex.Message, "Akıntı",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();

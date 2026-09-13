@@ -1,0 +1,158 @@
+<Window x:Class="HafifDM.Ui.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ayarlar" Height="660" Width="700" MinHeight="520" MinWidth="600"
+        Icon="/hafifdm.ico"
+        Background="{StaticResource B.Bg}"
+        WindowStartupLocation="CenterOwner"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <DockPanel Margin="20">
+
+        <Grid DockPanel.Dock="Bottom" Margin="0,16,0,0">
+            <TextBlock x:Name="TxtStatus" Style="{StaticResource T.Dim}" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" Margin="0,0,200,0" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Iptal" Click="BtnCancel_Click" Margin="0,0,8,0" MinWidth="88" />
+                <Button Style="{StaticResource Btn.Primary}" Content="Kaydet"
+                        Click="BtnSave_Click" IsDefault="True" MinWidth="96" />
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+
+                <!-- Klasorler -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Klasorler" FontWeight="SemiBold" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Varsayilan indirme klasoru" Style="{StaticResource T.Dim}"
+                                   Margin="2,0,0,5" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtDownloadDir" Grid.Column="0" />
+                            <Button Grid.Column="1" Content="Gozat" Click="BtnBrowseDownloadDir_Click"
+                                    Margin="8,0,0,0" MinWidth="72" />
+                        </Grid>
+
+                        <TextBlock Text="Dosya turu kurallari (her satir: uzantilar = alt klasor)"
+                                   Style="{StaticResource T.Dim}" Margin="2,14,0,5" />
+                        <TextBox x:Name="TxtRules" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                 Height="130" FontFamily="Consolas" FontSize="12" />
+                        <TextBlock Text="Ornek:  .zip,.rar,.7z = Arsivler" Style="{StaticResource T.Dim}"
+                                   Margin="2,5,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Hiz -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Hiz" FontWeight="SemiBold" Margin="0,0,0,10" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Ayni anda indirme" Style="{StaticResource T.Dim}"
+                                           Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtMaxConcurrent" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="4,0,4,0">
+                                <TextBlock Text="Baglanti / indirme" Style="{StaticResource T.Dim}"
+                                           Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtConnections" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                <TextBlock Text="Toplam limit (KB/sn, 0=yok)" Style="{StaticResource T.Dim}"
+                                           Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtGlobalLimit" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Arsivci -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Arsivci" FontWeight="SemiBold" Margin="0,0,0,10" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="CmbArchiver" Grid.Column="0" IsEditable="True" />
+                            <Button Grid.Column="1" Content="Gozat" Click="BtnBrowseArchiver_Click"
+                                    Margin="8,0,0,0" MinWidth="72" />
+                        </Grid>
+                        <TextBlock x:Name="TxtArchiverFound" Style="{StaticResource T.Dim}"
+                                   Margin="2,7,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Torrent -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Torrent" FontWeight="SemiBold" Margin="0,0,0,10" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Port" Style="{StaticResource T.Dim}" Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtTorrentPort" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="4,0,4,0">
+                                <TextBlock Text="Paylasim orani" Style="{StaticResource T.Dim}"
+                                           Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtSeedRatio" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                                <TextBlock Text="Paylasim suresi (dk)" Style="{StaticResource T.Dim}"
+                                           Margin="2,0,0,5" />
+                                <TextBox x:Name="TxtSeedTime" />
+                            </StackPanel>
+                        </Grid>
+                        <CheckBox x:Name="ChkDht" Content="DHT kullan" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Davranis -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Davranis" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <CheckBox x:Name="ChkAutoStart"
+                                  Content="Windows acilisinda indirme motorunu baslat" />
+                        <CheckBox x:Name="ChkExtractDefault"
+                                  Content="Arsivlerde 'cikar' kutusu varsayilan olarak isaretli gelsin" />
+                        <CheckBox x:Name="ChkOpenFolderDefault"
+                                  Content="Indirme bitince klasoru ac (varsayilan)" />
+
+                        <TextBlock Text="Ek aria2 ayarlari (her satirda bir tane, ornek: user-agent=Mozilla/5.0)"
+                                   Style="{StaticResource T.Dim}" Margin="2,12,0,5" TextWrapping="Wrap" />
+                        <TextBox x:Name="TxtExtraArgs" AcceptsReturn="True" Height="64"
+                                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Guvenlik -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Guvenlik" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock x:Name="TxtSecurity" Style="{StaticResource T.Dim}" TextWrapping="Wrap" />
+                        <Button Content="Motoru yeniden baslat" Click="BtnRestartEngine_Click"
+                                HorizontalAlignment="Left" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

@@ -55,6 +55,11 @@ function pickUrl(info) {
 
 // ───────────────────────── İndirme yakalama ─────────────────────────
 
+// Sira onemli: DURAKLAT -> devret -> ancak basarili olursa iptal et.
+// Once iptal edip sonra devretmeyi denemek, devir basarisiz oldugunda
+// (masaustu uygulamasi kapali, kimlik kayitli degil, vb.) indirmenin
+// tamamen kaybolmasina yol acar. Duraklatma Chrome'un baglantisini
+// canli tutar, boylece basarisizlikta kaldigi yerden devam edebilir.
 chrome.downloads.onCreated.addListener(async (item) => {
   if (!(await captureEnabled())) return;
 
@@ -63,16 +68,30 @@ chrome.downloads.onCreated.addListener(async (item) => {
   if (!url) return;                       // blob:, data:, "Sayfayı kaydet" vb. Chrome'da kalsın
   if (item.state !== "in_progress") return;
 
-  // Chrome'un indirmesini durdur, sonra listesinden de sil ki çöp kalmasın.
-  chrome.downloads.cancel(item.id, () => {
+  chrome.downloads.pause(item.id, () => {
     if (chrome.runtime.lastError) {
-      // Çoktan bitmiş ya da iptal edilemeyen bir indirme: dokunma, Chrome'da kalsın.
-      console.warn("Akıntı: indirme iptal edilemedi, Chrome'da bırakıldı.",
-                   chrome.runtime.lastError.message);
+      // Duraklatilamiyor (cok kucuk dosya coktan bitmis olabilir): dokunma.
       return;
     }
-    chrome.downloads.erase({ id: item.id }, () => void chrome.runtime.lastError);
-    send(url, item.referrer);
+
+    const msg = { url };
+    const ref = valid(item.referrer);
+    if (ref) msg.referrer = ref;          // bazı dosya siteleri Referer başlığı ister
+
+    chrome.runtime.sendNativeMessage(HOST, msg, (reply) => {
+      const failed = chrome.runtime.lastError || !reply || reply.ok !== true;
+      if (failed) {
+        const why = chrome.runtime.lastError?.message || reply?.reason || "bilinmeyen sebep";
+        console.warn("Akıntı devralamadı, indirme Chrome'a bırakıldı:", why);
+        chrome.downloads.resume(item.id, () => void chrome.runtime.lastError);
+        return;
+      }
+      // Devir tamam: Chrome'un kopyasini iptal et ve listesinden sil.
+      chrome.downloads.cancel(item.id, () => {
+        if (chrome.runtime.lastError) return;
+        chrome.downloads.erase({ id: item.id }, () => void chrome.runtime.lastError);
+      });
+    });
   });
 });
 

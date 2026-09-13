@@ -207,20 +207,83 @@ function Get-UnpackedExtensionId([string]$path) {
     return $sb.ToString()
 }
 
-if (-not $ExtensionId) {
-    $ExtensionId = Get-UnpackedExtensionId $ExtDir
-    Ok "Eklenti kimligi yoldan hesaplandi: $ExtensionId"
-} else {
+function Get-LoadedExtensionIds([string[]]$dirs) {
+    # Chrome, paketlenmemis eklentiye YOLUNDAN bir kimlik uretir; eklentiyi depo
+    # klasorunden yuklediysen kurulum klasorunun kimliginden farkli olur ve
+    # "Access to the specified native messaging host is forbidden" hatasi alinir.
+    # Tahmin etmek yerine Chrome'un kendi kaydindan okuyoruz.
+    $found = @()
+    $roots = @(
+        (Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data'),
+        (Join-Path $env:LOCALAPPDATA 'Chromium\User Data')
+    ) | Where-Object { Test-Path $_ }
+
+    foreach ($root in $roots) {
+        $profiles = Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -eq 'Default' -or $_.Name -like 'Profile *' }
+        foreach ($prof in $profiles) {
+            foreach ($file in 'Preferences', 'Secure Preferences') {
+                $p = Join-Path $prof.FullName $file
+                if (-not (Test-Path $p)) { continue }
+                # -AsHashtable: StrictMode altinda PSCustomObject uzerinde olmayan
+                # ozellige bakmak hata firlatiyor; hashtable'da ContainsKey guvenli.
+                try {
+                    $json = Get-Content $p -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable
+                } catch { continue }
+
+                if (-not $json.ContainsKey('extensions')) { continue }
+                $ext = $json['extensions']
+                if ($ext -isnot [hashtable] -or -not $ext.ContainsKey('settings')) { continue }
+                $settings = $ext['settings']
+                if ($settings -isnot [hashtable]) { continue }
+
+                foreach ($id in $settings.Keys) {
+                    $val = $settings[$id]
+                    if ($val -isnot [hashtable] -or -not $val.ContainsKey('path')) { continue }
+                    $extPath = [string]$val['path']
+                    if (-not $extPath) { continue }
+                    foreach ($d in $dirs) {
+                        if ($extPath.TrimEnd('\') -ieq $d.TrimEnd('\')) { $found += $id }
+                    }
+                }
+            }
+        }
+    }
+    return $found | Select-Object -Unique
+}
+
+$ids = @()
+if ($ExtensionId) {
+    $ids += $ExtensionId
     Ok "Eklenti kimligi elle verildi: $ExtensionId"
 }
+
+# Once Chrome'un kendi kaydina bak: yuklu eklentinin GERCEK kimligi oradadir.
+$repoExtDir = Join-Path $RepoRoot 'extension\chrome'
+$loaded = Get-LoadedExtensionIds @($ExtDir, $repoExtDir)
+
+if ($loaded) {
+    $ids += $loaded
+    foreach ($l in $loaded) { Ok "Chrome'da yuklu bulundu: $l" }
+} else {
+    # Hicbir sey yuklu degilse yoldan hesaplanan kimlikle basla. Bu bir TAHMIN:
+    # Chrome'un kimlik turetmesi surumden surume degisebiliyor. Eklentiyi
+    # yukledikten sonra scripti tekrar calistirinca gercegi okuyup ekler.
+    $ids += Get-UnpackedExtensionId $ExtDir
+    Ok 'Chrome kaydinda yuklu eklenti yok; kimlik yoldan tahmin edildi.'
+    Warn2 'Eklentiyi yukledikten SONRA bu scripti bir kez daha calistir.'
+}
+
+$ids = $ids | Select-Object -Unique
+$ExtensionId = $ids[0]
 
 $manifest = [ordered]@{
     name            = $HostName
     description     = 'Akıntı indirme köprüsü'
     path            = $ExePath
     type            = 'stdio'
-    # SADECE bu eklenti bu host ile konusabilir.
-    allowed_origins = @("chrome-extension://$ExtensionId/")
+    # SADECE bu kimlikler bu host ile konusabilir.
+    allowed_origins = @($ids | ForEach-Object { "chrome-extension://$_/" })
 }
 $ManifestPath = Join-Path $InstallDir 'native-host.json'
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $ManifestPath -Encoding utf8
@@ -268,9 +331,11 @@ Write-Host '  2. Sag ustten "Gelistirici modu" (Developer mode) ac'
 Write-Host '  3. "Paketlenmemis ogeyi yukle" (Load unpacked) tikla'
 Write-Host "  4. Su klasoru sec:  $ExtDir"
 Write-Host ''
-Write-Host "  Beklenen eklenti kimligi: $ExtensionId" -ForegroundColor DarkGray
-Write-Host '  Chrome farkli bir kimlik gosterirse su komutu o kimlikle bir kez daha calistir:' -ForegroundColor DarkGray
-Write-Host "    pwsh -File scripts\install.ps1 -SkipBuild -ExtensionId <kimlik>" -ForegroundColor DarkGray
+Write-Host '  Izin verilen eklenti kimlikleri:' -ForegroundColor DarkGray
+foreach ($i in $ids) { Write-Host "    $i" -ForegroundColor DarkGray }
+Write-Host '  Eklentiyi yukledikten SONRA bu scripti bir kez daha calistir:' -ForegroundColor DarkGray
+Write-Host '  gercek kimligi Chrome kaydindan okuyup kendisi ekler.' -ForegroundColor DarkGray
+Write-Host "    pwsh -File scripts\install.ps1 -SkipBuild" -ForegroundColor DarkGray
 Write-Host ''
 Write-Host 'Kontrol:' -ForegroundColor White
 Write-Host "  Uygulama : $ExePath"

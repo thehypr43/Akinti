@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -8,10 +8,10 @@ namespace Akinti.Ui;
 /// Her indirmenin goz onunde onaylandigi yer. Eklentiden gelen mesaj sadece adresi
 /// belirler; hedef klasor YALNIZCA burada, kullanicinin kendi eliyle degistirilir.
 ///
-/// Pencere bilerek kucuk: dosya, nereye inecegi ve iki dugme. Indirme sonrasi
-/// davranislar (arsiv cikarma, klasoru acma) Ayarlar'dan bir kez secilir, her
-/// indirmede tekrar sorulmaz; tek seferlik "yonetici olarak calistir" gibi
-/// isler ana penceredeki satir menusunde durur.
+/// Pencere bilerek kucuk: dosya, nereye inecegi, iki dugme. Indirme sonrasi
+/// secenekler sadece uygulanabildiklerinde beliriyor - arsivde "klasore cikar",
+/// calistirilabilir dosyada "yonetici olarak calistir" - yani hicbir zaman
+/// uzantiyla ilgisiz bir kutu gorunmuyor.
 /// </summary>
 public partial class NewDownloadWindow : Window
 {
@@ -26,6 +26,7 @@ public partial class NewDownloadWindow : Window
     private string _fileName = "";
     private bool _isTorrentSource;
     private bool _userEditedFileName;
+    private bool _userTouchedExtract;
     private bool _loading = true;
 
     /// <summary>Tarayicidan devralinan indirme: adres, ad, cerez ve kimlik dizesi hazir gelir.</summary>
@@ -98,6 +99,7 @@ public partial class NewDownloadWindow : Window
 
         _isTorrentSource = UrlHelper.IsMagnet(url) || UrlHelper.IsTorrentFileUrl(url);
         ChkPickFiles.Visibility = _isTorrentSource ? Visibility.Visible : Visibility.Collapsed;
+        UpdateOptions();
 
         _probeCts?.Cancel();
         _probeCts = new CancellationTokenSource();
@@ -141,6 +143,7 @@ public partial class NewDownloadWindow : Window
 
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
         IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
+        UpdateOptions();
     }
 
     private void TxtFileName_TextChanged(object sender, TextChangedEventArgs e)
@@ -149,7 +152,40 @@ public partial class NewDownloadWindow : Window
         _fileName = TxtFileName.Text.Trim();
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
         IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
+        UpdateOptions();
     }
+
+    /// <summary>Indirme sonrasi secenekler yalnizca anlamli olduklari uzantilarda
+    /// gorunur: cikarma bir arsiv (ve kurulu bir arsivci) varsa, yonetici olarak
+    /// calistirma calistirilabilir bir dosyaysa. Uygulanamayacak bir kutuyu
+    /// gostermek, sessizce yok sayilan bir secenek demek olurdu.</summary>
+    private void UpdateOptions()
+    {
+        var canExtract = !_isTorrentSource && Archivers.IsArchive(_fileName) && Archivers.AnyAvailable();
+        var canRun = !_isTorrentSource && PostActions.IsRunnable(_fileName);
+
+        ChkExtract.Visibility = canExtract ? Visibility.Visible : Visibility.Collapsed;
+        if (!canExtract) ChkExtract.IsChecked = false;
+        else if (!_userTouchedExtract) ChkExtract.IsChecked = _cfg.ExtractArchivesDefault;
+
+        ChkDeleteArchive.Visibility = canExtract && ChkExtract.IsChecked == true
+            ? Visibility.Visible : Visibility.Collapsed;
+        if (ChkDeleteArchive.Visibility != Visibility.Visible) ChkDeleteArchive.IsChecked = false;
+
+        ChkRunAdmin.Visibility = canRun ? Visibility.Visible : Visibility.Collapsed;
+        if (!canRun) ChkRunAdmin.IsChecked = false;
+
+        TxtAdminWarn.Visibility = ChkRunAdmin.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        PnlPost.Visibility = canExtract || canRun ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ChkExtract_Changed(object sender, RoutedEventArgs e)
+    {
+        _userTouchedExtract = true;
+        UpdateOptions();
+    }
+
+    private void ChkRunAdmin_Changed(object sender, RoutedEventArgs e) => UpdateOptions();
 
     private async void TxtUrl_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -200,11 +236,6 @@ public partial class NewDownloadWindow : Window
             return;
         }
 
-        // Indirme sonrasi davranis artik bu pencerede degil, Ayarlar'da bir kez
-        // seciliyor. Arsiv cikarma yalnizca gercekten arsivse ve bir arsivci varsa.
-        var extract = _cfg.ExtractArchivesDefault && !_isTorrentSource
-                      && Archivers.IsArchive(_fileName) && Archivers.AnyAvailable();
-
         var req = new DownloadRequest
         {
             Url = url,
@@ -213,7 +244,9 @@ public partial class NewDownloadWindow : Window
             Connections = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16),
             SpeedLimitBytes = 0,
             StartPaused = paused,
-            Extract = extract,
+            Extract = ChkExtract.IsChecked == true,
+            DeleteArchiveAfterExtract = ChkDeleteArchive.IsChecked == true,
+            RunAsAdmin = ChkRunAdmin.IsChecked == true,
             OpenFolder = _cfg.OpenFolderAfterDownloadDefault,
             Referrer = _referrer,
             Cookie = _cookie,

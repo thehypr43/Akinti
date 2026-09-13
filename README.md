@@ -8,8 +8,10 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 
 - **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
 - **Her şey indirme klasörüne.** Türe göre otomatik alt klasörleme yok; klasörü istersen indirme penceresinden tek tek değiştirirsin.
-- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. Listede satıra sağ tıkla; her indirmede otomatik olsun istiyorsan Ayarlar'dan aç.
-- **Yönetici olarak çalıştır.** Kurulum dosyaları için, satır menüsünden. UAC onayı Windows tarafından sorulur.
+- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. İndirme penceresinde işaretle ya da bitince "Klasöre çıkar" de.
+- **Yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
+
+Bu ikisi **yalnızca uygun uzantılarda** görünür: çıkarma bir arşivse (ve kurulu bir arşivci varsa), yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise. Uygulanamayacak bir seçenek hiç çizilmiyor.
 - **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
@@ -174,4 +176,4 @@ set AKINTI_THEME=light
 |---|---|
 | Bağlantı yakalandı | Sağ tık ya da Chrome'dan devralınan indirme. Dosya, kayıt klasörü, iki düğme — başka hiçbir şey. |
 | İndiriliyor | "İndir"e basınca diyaloğun yerine ekranın ortasında açılır. Kapatmak indirmeyi durdurmaz. |
-| İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Başarılıysa kendiliğinden kapanır, hatada kalır. |
+| İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Sen kapatana kadar durur. Düğmeler: Klasör, Klasöre çıkar, Yönetici aç, Aç — ortadaki ikisi dosya türü izin veriyorsa. |

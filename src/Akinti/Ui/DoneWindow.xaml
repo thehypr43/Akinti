@@ -1,4 +1,4 @@
-<Window x:Class="Akinti.Ui.DoneWindow"
+﻿<Window x:Class="Akinti.Ui.DoneWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
@@ -106,12 +106,19 @@
         </Border>
 
         <!-- ═══ Alt sıra ═══ -->
+        <!-- Sira: Klasor, Klasore cikar, Yonetici ac, Ac. Ortadaki ikisi yalnizca
+             dosya turu izin veriyorsa gorunur. -->
         <Grid Margin="0,18,0,0">
-            <TextBlock x:Name="TxtNote" Style="{StaticResource T.Meta}" VerticalAlignment="Center"
-                       TextTrimming="CharacterEllipsis" Margin="2,0,190,0" />
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <!-- Durum yazisi kendi sutununda: uzun bir ileti dugmelerin uzerine binmesin -->
+            <TextBlock Grid.Column="0" x:Name="TxtNote" Style="{StaticResource T.Meta}"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="2,0,10,0" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="BtnOpenFolder" Style="{StaticResource Btn.Secondary}"
-                        Padding="12,7" Margin="0,0,9,0" Click="BtnOpenFolder_Click">
+                        Padding="12,7" Margin="0,0,8,0" Click="BtnOpenFolder_Click">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8B7;" FontFamily="{StaticResource F.Icon}" FontSize="12"
                                    VerticalAlignment="Center"
@@ -121,8 +128,33 @@
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </StackPanel>
                 </Button>
+
+                <Button x:Name="BtnExtract" Style="{StaticResource Btn.Secondary}" Visibility="Collapsed"
+                        Padding="12,7" Margin="0,0,8,0" Click="BtnExtract_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xF012;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="Klasöre çıkar" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   FontSize="14" FontWeight="Medium"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnRunAdmin" Style="{StaticResource Btn.Secondary}" Visibility="Collapsed"
+                        Padding="12,7" Margin="0,0,8,0" Click="BtnRunAdmin_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE7EF;" FontFamily="{StaticResource F.Icon}" FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                        <TextBlock Text="Yönetici aç" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   FontSize="14" FontWeight="Medium"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </StackPanel>
+                </Button>
+
                 <Button x:Name="BtnOpenFile" Style="{StaticResource Btn.Primary}" Content="Aç"
-                        MinWidth="72" Padding="12,7" IsDefault="True" Click="BtnOpenFile_Click" />
+                        MinWidth="68" Padding="12,7" IsDefault="True" Click="BtnOpenFile_Click" />
             </StackPanel>
         </Grid>
 

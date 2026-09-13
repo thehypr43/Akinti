@@ -121,6 +121,11 @@ public static class PostActions
         return result.Message;
     }
 
+    /// <summary>Bu uzanti yonetici olarak calistirilabilir mi? Diyalog ve sonuc
+    /// penceresi "Yonetici ac" dugmesini buna gore gosteriyor.</summary>
+    public static bool IsRunnable(string nameOrPath) =>
+        RunnableExtensions.Contains(Path.GetExtension(nameOrPath), StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Indirilen dosyayi yonetici olarak calistirir.
     /// Bu bayrak SADECE indirme diyalogundan isaretlenebilir; eklentiden gelen

@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace Akinti.Ui;
 
@@ -11,16 +11,13 @@ namespace Akinti.Ui;
 /// kendini kapatip yerine bunu acar, boylece "iniyor" ile "bitti" ayni pencerede
 /// karisik durmaz.
 ///
-/// Basarili sonuc bir sure sonra kendiliginden kapanir; hata kalir, cunku
-/// okunmasi gereken durum odur. Fare pencereye girdiginde sayac iptal edilir:
-/// kullanici okurken pencere altindan kaybolmasin.
+/// Kendiliginden kapanmaz: kullanici kapatana kadar durur.
 /// </summary>
 public partial class DoneWindow : Window
 {
-    private const int AutoCloseSeconds = 20;
-
     private readonly string _filePath;
-    private DispatcherTimer? _autoClose;
+    private readonly bool _isTorrent;
+    private string? _extractedDir;
 
     public DoneWindow(DownloadItem item, TimeSpan? elapsed = null)
     {
@@ -28,6 +25,7 @@ public partial class DoneWindow : Window
         WindowEffects.Attach(this);
 
         _filePath = PostActions.ResolveFilePath(item.FilePath, item.Dir, item.DisplayName);
+        _isTorrent = item.IsTorrent;
         var failed = item.Status == Aria2Status.Error;
 
         IcoFile.Text = Icons.ForFile(_filePath.Length > 0 ? _filePath : item.DisplayName, item.IsTorrent);
@@ -49,17 +47,30 @@ public partial class DoneWindow : Window
             TxtDuration.Text = Format.Duration(t)
                 + (size > 0 ? $"  ·  ort. {Format.Speed((long)(size / t.TotalSeconds))}" : "");
         else
-            PnlDuration.Visibility = Visibility.Hidden;
+        {
+            // Sure bilinmiyorsa satirda bosluk kalmasin: boyut sola kaysin.
+            PnlDuration.Visibility = Visibility.Collapsed;
+            Grid.SetColumn(PnlSize, 0);
+        }
 
-        if (failed)
-        {
-            ShowFailed(item);
-        }
-        else
-        {
-            Title = "İndirme tamamlandı";
-            StartAutoClose();
-        }
+        if (failed) ShowFailed(item);
+        else ShowCompleted();
+    }
+
+    /// <summary>Dugmeler yalnizca dosya turu izin veriyorsa gorunur: arsiv degilse
+    /// "Klasore cikar", calistirilabilir degilse "Yonetici ac" hic cizilmez.</summary>
+    private void ShowCompleted()
+    {
+        Title = "İndirme tamamlandı";
+
+        var exists = _filePath.Length > 0 && File.Exists(_filePath);
+        BtnExtract.Visibility = exists && !_isTorrent
+            && Archivers.IsArchive(_filePath) && Archivers.AnyAvailable()
+            ? Visibility.Visible : Visibility.Collapsed;
+        BtnRunAdmin.Visibility = exists && !_isTorrent && PostActions.IsRunnable(_filePath)
+            ? Visibility.Visible : Visibility.Collapsed;
+        BtnOpenFile.Visibility = exists || _filePath.Length > 0
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ShowFailed(DownloadItem item)
@@ -77,43 +88,19 @@ public partial class DoneWindow : Window
         TxtError.Text = string.IsNullOrWhiteSpace(item.ErrorMessage)
             ? $"aria2 hata kodu {item.ErrorCode}" : item.ErrorMessage!;
 
-        // Yarim kalan dosya acilmaz; klasoru gostermek yine de ise yarar.
+        // Yarim kalan dosya ne acilir ne cikarilir; klasoru gostermek yine de ise yarar.
         BtnOpenFile.Visibility = Visibility.Collapsed;
+        BtnExtract.Visibility = Visibility.Collapsed;
+        BtnRunAdmin.Visibility = Visibility.Collapsed;
         BtnOpenFolder.Visibility = _filePath.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-        PnlDuration.Visibility = Visibility.Hidden;
-        PnlSize.Visibility = Visibility.Hidden;
+        PnlDuration.Visibility = Visibility.Collapsed;
+        PnlSize.Visibility = Visibility.Collapsed;
     }
 
     private static long SafeLength(string path)
     {
         try { return path.Length > 0 && File.Exists(path) ? new FileInfo(path).Length : 0; }
         catch { return 0; }
-    }
-
-    // ──────────── Kendiliginden kapanma ────────────
-
-    private void StartAutoClose()
-    {
-        var left = AutoCloseSeconds;
-        TxtNote.Text = $"{left} sn sonra kapanır";
-
-        _autoClose = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _autoClose.Tick += (_, _) =>
-        {
-            if (--left <= 0) { _autoClose!.Stop(); Close(); return; }
-            TxtNote.Text = $"{left} sn sonra kapanır";
-        };
-        _autoClose.Start();
-
-        MouseEnter += (_, _) => CancelAutoClose();
-    }
-
-    private void CancelAutoClose()
-    {
-        if (_autoClose is null) return;
-        _autoClose.Stop();
-        _autoClose = null;
-        TxtNote.Text = "";
     }
 
     // ──────────── Etkilesim ────────────
@@ -127,8 +114,44 @@ public partial class DoneWindow : Window
 
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        PostActions.OpenFolder(_filePath);
+        PostActions.OpenFolder(_extractedDir ?? _filePath);
         Close();
+    }
+
+    private async void BtnExtract_Click(object sender, RoutedEventArgs e)
+    {
+        BtnExtract.IsEnabled = false;
+        TxtNote.Text = "Çıkarılıyor…";
+        try
+        {
+            var result = await Archivers.ExtractAsync(_filePath, Config.Load());
+
+            if (result.Success)
+            {
+                // Isini yapan dugme durmasin; nereye cikardigini "Klasor" gosterir.
+                BtnExtract.Visibility = Visibility.Collapsed;
+                TxtNote.Text = "Klasöre çıkarıldı";
+                if (!string.IsNullOrEmpty(result.TargetDir)) _extractedDir = result.TargetDir;
+            }
+            else
+            {
+                TxtNote.Text = result.Message;
+                BtnExtract.IsEnabled = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Cikarma basarisiz", ex);
+            TxtNote.Text = "Çıkarılamadı: " + ex.Message;
+            BtnExtract.IsEnabled = true;
+        }
+    }
+
+    private void BtnRunAdmin_Click(object sender, RoutedEventArgs e)
+    {
+        // UAC istemini Windows gosterir; kullanici reddederse pencere kapanmaz.
+        var message = PostActions.RunAsAdmin(_filePath);
+        TxtNote.Text = message;
     }
 
     private void BtnOpenFile_Click(object sender, RoutedEventArgs e)

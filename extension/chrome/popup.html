@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<style>
+  /* Nocturne — masaüstü uygulamasıyla aynı renkler */
+  :root {
+    --bg: #161826;
+    --surface: #232532;
+    --text: #e9e9ed;
+    --muted: rgba(233, 233, 237, .55);
+    --accent: #9184d9;
+    --divider: rgba(233, 233, 237, .16);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 268px; padding: 14px;
+    background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  }
+  h1 { margin: 0 0 2px; font-size: 15px; font-weight: 500; }
+  .sub { margin: 0 0 14px; font-size: 12px; color: var(--muted); }
+
+  .row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--divider);
+    border-radius: 8px; padding: 11px 12px; cursor: pointer;
+  }
+  .row:hover { border-color: rgba(233, 233, 237, .45); }
+  .row input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .box {
+    width: 18px; height: 18px; flex: none; border-radius: 4px;
+    border: 1px solid var(--divider); background: var(--bg);
+    display: grid; place-items: center;
+  }
+  .row input:checked + .box { border-color: var(--accent); }
+  .box::after {
+    content: ""; width: 9px; height: 5px; margin-top: -2px;
+    border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
+    transform: rotate(-45deg); opacity: 0;
+  }
+  .row input:checked + .box::after { opacity: 1; }
+
+  .label { font-size: 13px; }
+  .note { margin: 12px 2px 0; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <h1>Akıntı</h1>
+  <p class="sub">Sağ tık menüsü her zaman açıktır.</p>
+
+  <label class="row">
+    <input type="checkbox" id="capture">
+    <span class="box"></span>
+    <span class="label">Chrome indirmelerini yakala</span>
+  </label>
+
+  <p class="note" id="note"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

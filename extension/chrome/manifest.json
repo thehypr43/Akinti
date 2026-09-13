@@ -1,13 +1,22 @@
 {
   "manifest_version": 3,
   "name": "Akıntı",
-  "version": "1.0.0",
-  "description": "Sağ tık menüsünden Akıntı ile indir. Sayfalara hiçbir şekilde dokunmaz.",
+  "version": "1.1.0",
+  "description": "Chrome indirmelerini Akıntı'ya yönlendirir. Sayfalara hiçbir şekilde dokunmaz.",
 
-  "permissions": ["contextMenus", "nativeMessaging"],
+  "permissions": ["contextMenus", "nativeMessaging", "downloads"],
 
   "background": {
     "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_title": "Akıntı",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
   },
 
   "icons": {

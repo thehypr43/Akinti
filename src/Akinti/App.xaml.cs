@@ -72,7 +72,11 @@ public partial class App : Application
         if (newIndex >= 0 && newIndex + 1 < args.Length)
         {
             ShutdownMode = ShutdownMode.OnLastWindowClose;
-            var win = new NewDownloadWindow(args[newIndex + 1]);
+
+            var refIndex = Array.IndexOf(args, "--referrer");
+            var referrer = refIndex >= 0 && refIndex + 1 < args.Length ? args[refIndex + 1] : null;
+
+            var win = new NewDownloadWindow(args[newIndex + 1], referrer);
             win.Show();
             return;
         }

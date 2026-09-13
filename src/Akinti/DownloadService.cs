@@ -14,6 +14,10 @@ public sealed class DownloadRequest
     /// <summary>true ise kuyruga duraklatilmis eklenir ("Sonra indir").</summary>
     public bool StartPaused { get; set; }
 
+    /// <summary>Tarayicidan gelen sayfa adresi. Sadece HTTP Referer basligi olarak
+    /// kullanilir; bazi dosya siteleri onsuz 403 donuyor.</summary>
+    public string? Referrer { get; set; }
+
     // --- Indirme sonrasi (SADECE diyalogdan isaretlenebilir) ---
     public bool Extract { get; set; }
     public bool DeleteArchiveAfterExtract { get; set; }
@@ -52,6 +56,9 @@ public static class DownloadService
 
         if (req.StartPaused)
             options["pause"] = "true";
+
+        if (!string.IsNullOrWhiteSpace(req.Referrer))
+            options["referer"] = req.Referrer!;
 
         var isTorrentSource = UrlHelper.IsMagnet(req.Url) || UrlHelper.IsTorrentFileUrl(req.Url);
 

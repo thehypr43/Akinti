@@ -43,19 +43,28 @@ public static class NativeHost
 
     private static (bool Ok, string Reason) Handle(string json)
     {
-        string? url;
+        string? url, referrer;
         try
         {
             using var doc = JsonDocument.Parse(json);
-            // Tek okunan alan bu. Digerleri bilerek yok sayiliyor.
-            url = doc.RootElement.TryGetProperty("url", out var u) && u.ValueKind == JsonValueKind.String
-                ? u.GetString()
-                : null;
+
+            // Okunan alanlar SADECE bunlar. Hedef klasor, arsiv cikarma ve
+            // "yonetici olarak calistir" mesajdan hicbir zaman okunmaz.
+            url = Str(doc.RootElement, "url");
+
+            // Referrer yalnizca HTTP Referer basligi olarak kullanilir; hicbir
+            // yetki tasimaz. Bazi dosya siteleri onsuz 403 donuyor.
+            referrer = Str(doc.RootElement, "referrer");
+            if (referrer is not null && !UrlHelper.IsSupportedScheme(referrer)) referrer = null;
         }
         catch (JsonException)
         {
             return (false, "gecersiz mesaj");
         }
+
+        static string? Str(JsonElement el, string name) =>
+            el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
+                ? v.GetString() : null;
 
         if (string.IsNullOrWhiteSpace(url))
             return (false, "url yok");
@@ -80,6 +89,11 @@ public static class NativeHost
             };
             psi.ArgumentList.Add("--new");
             psi.ArgumentList.Add(url!);
+            if (referrer is not null)
+            {
+                psi.ArgumentList.Add("--referrer");
+                psi.ArgumentList.Add(referrer);
+            }
             Process.Start(psi);
             return (true, "diyalog acildi");
         }

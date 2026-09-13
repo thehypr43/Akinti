@@ -16,15 +16,17 @@ public partial class NewDownloadWindow : Window
     private static readonly string[] RunnableExtensions = [".exe", ".msi", ".msix", ".bat", ".cmd", ".ps1"];
 
     private readonly Config _cfg = Config.Load();
+    private readonly string? _referrer;
     private CancellationTokenSource? _probeCts;
     private bool _folderTouchedByUser;
     private bool _userEditedFileName;
     private bool _userTouchedExtract;
     private bool _loading = true;
 
-    public NewDownloadWindow(string? url)
+    public NewDownloadWindow(string? url, string? referrer = null)
     {
         InitializeComponent();
+        _referrer = referrer;
 
         for (var i = 1; i <= 16; i++) CmbConnections.Items.Add(i);
         CmbConnections.SelectedIndex = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16) - 1;
@@ -262,6 +264,7 @@ public partial class NewDownloadWindow : Window
             DeleteArchiveAfterExtract = ChkDeleteArchive.IsChecked == true,
             RunAsAdmin = ChkRunAdmin.IsChecked == true,
             OpenFolder = ChkOpenFolder.IsChecked == true,
+            Referrer = _referrer,
         };
 
         if (PnlTorrent.Visibility == Visibility.Visible

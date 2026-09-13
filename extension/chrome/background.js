@@ -32,8 +32,26 @@ function buildMenus() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(() => { buildMenus(); refreshBadge(); });
-chrome.runtime.onStartup.addListener(() => { buildMenus(); refreshBadge(); });
+chrome.runtime.onInstalled.addListener(() => { buildMenus(); refreshBadge(); applyDownloadUi(); });
+chrome.runtime.onStartup.addListener(() => { buildMenus(); refreshBadge(); applyDownloadUi(); });
+
+// Yakalama acikken Chrome'un kendi indirme balonu kapatilir: indirmeyi hemen
+// iptal ettigimiz icin sag ustte bos bir balon acilip kaliyordu. Yakalama
+// kapanınca ya da devir basarisiz olup indirme Chrome'a birakilinca geri acilir,
+// yoksa Chrome sessizce indirir ve kullanici hicbir sey gormez.
+async function applyDownloadUi() {
+  try {
+    const on = await captureEnabled();
+    await chrome.downloads.setUiOptions({ enabled: !on });
+  } catch (e) {
+    console.warn("Akıntı: indirme arayüzü ayarlanamadı.", e);
+  }
+}
+
+async function showDownloadUi() {
+  try { await chrome.downloads.setUiOptions({ enabled: true }); }
+  catch (e) { console.warn("Akıntı: indirme arayüzü geri açılamadı.", e); }
+}
 
 // ───────────────────────── Sağ tık ─────────────────────────
 
@@ -78,11 +96,18 @@ chrome.downloads.onCreated.addListener(async (item) => {
     const ref = valid(item.referrer);
     if (ref) msg.referrer = ref;          // bazı dosya siteleri Referer başlığı ister
 
+    // Chrome'un belirledigi dosya adi SADECE bir ipucu. Adres bir GUID ise
+    // (dosya barindirma siteleri boyle yapiyor) dogru adi yalnizca Chrome bilir.
+    // Masaustu tarafi bu adi temizler ve kullanici diyalogda gorup degistirebilir.
+    const base = baseName(item.filename);
+    if (base) msg.filename = base;
+
     chrome.runtime.sendNativeMessage(HOST, msg, (reply) => {
       const failed = chrome.runtime.lastError || !reply || reply.ok !== true;
       if (failed) {
         const why = chrome.runtime.lastError?.message || reply?.reason || "bilinmeyen sebep";
         console.warn("Akıntı devralamadı, indirme Chrome'a bırakıldı:", why);
+        showDownloadUi();   // Chrome indirecek, kullanici gorebilsin
         chrome.downloads.resume(item.id, () => void chrome.runtime.lastError);
         return;
       }
@@ -122,14 +147,14 @@ async function refreshBadge() {
 }
 
 chrome.storage?.onChanged?.addListener((changes, area) => {
-  if (area === "local" && CAPTURE_KEY in changes) refreshBadge();
+  if (area === "local" && CAPTURE_KEY in changes) { refreshBadge(); applyDownloadUi(); }
 });
 
 // ───────────────────────── Ortak ─────────────────────────
 
-// Mesajda SADECE url ve referrer var. Hedef klasör, arşiv çıkarma ve "yönetici
-// olarak çalıştır" gibi alanlar bilerek gönderilmiyor; onlar yalnızca masaüstü
-// uygulamasının diyaloğunda, kullanıcının kendi eliyle seçilir.
+// Mesajda yalnızca url, referrer ve dosya adı ipucu var. Hedef klasör, arşiv
+// çıkarma ve "yönetici olarak çalıştır" bilerek gönderilmiyor; onlar yalnızca
+// masaüstü uygulamasının diyaloğunda, kullanıcının kendi eliyle seçilir.
 function send(url, referrer) {
   const msg = { url };
   const ref = valid(referrer);
@@ -149,6 +174,14 @@ function valid(url) {
   const lower = url.trim().toLowerCase();
   const ok = ["http://", "https://", "ftp://", "ftps://", "sftp://", "magnet:"];
   return ok.some((p) => lower.startsWith(p)) ? url.trim() : null;
+}
+
+// Yol degil, sadece son parca. Klasor bilgisi bilerek atiliyor: hedef klasoru
+// her zaman masaustu diyalogu belirler, tarayicidan gelen mesaj degil.
+function baseName(p) {
+  if (typeof p !== "string" || p.length === 0) return null;
+  const last = p.split(/[\\/]/).pop();     // Windows'ta ters bölü, diğerlerinde bölü
+  return last && last.length > 0 && last.length <= 255 ? last : null;
 }
 
 function extractUrl(text) {

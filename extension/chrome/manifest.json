@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Akıntı",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Chrome indirmelerini Akıntı'ya yönlendirir. Sayfalara hiçbir şekilde dokunmaz.",
 
-  "permissions": ["contextMenus", "nativeMessaging", "downloads", "storage"],
+  "permissions": ["contextMenus", "nativeMessaging", "downloads", "downloads.ui", "storage"],
 
   "background": {
     "service_worker": "background.js"

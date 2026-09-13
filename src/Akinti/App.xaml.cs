@@ -76,7 +76,10 @@ public partial class App : Application
             var refIndex = Array.IndexOf(args, "--referrer");
             var referrer = refIndex >= 0 && refIndex + 1 < args.Length ? args[refIndex + 1] : null;
 
-            var win = new NewDownloadWindow(args[newIndex + 1], referrer);
+            var nameIndex = Array.IndexOf(args, "--name");
+            var suggested = nameIndex >= 0 && nameIndex + 1 < args.Length ? args[nameIndex + 1] : null;
+
+            var win = new NewDownloadWindow(args[newIndex + 1], referrer, suggested);
             win.Show();
             return;
         }

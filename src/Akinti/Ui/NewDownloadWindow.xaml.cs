@@ -17,16 +17,18 @@ public partial class NewDownloadWindow : Window
 
     private readonly Config _cfg = Config.Load();
     private readonly string? _referrer;
+    private readonly bool _hasSuggestedName;
     private CancellationTokenSource? _probeCts;
     private bool _folderTouchedByUser;
     private bool _userEditedFileName;
     private bool _userTouchedExtract;
     private bool _loading = true;
 
-    public NewDownloadWindow(string? url, string? referrer = null)
+    public NewDownloadWindow(string? url, string? referrer = null, string? suggestedName = null)
     {
         InitializeComponent();
         _referrer = referrer;
+        _hasSuggestedName = !string.IsNullOrWhiteSpace(suggestedName);
 
         for (var i = 1; i <= 16; i++) CmbConnections.Items.Add(i);
         CmbConnections.SelectedIndex = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16) - 1;
@@ -43,6 +45,11 @@ public partial class NewDownloadWindow : Window
 
         TxtUrl.Text = url ?? "";
         TxtDialogTitle.Text = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
+
+        // Tarayicinin buldugu ad, adresten tahmin etmekten daima daha iyidir:
+        // dosya barindirma siteleri adreste GUID kullaniyor, gercek adi
+        // Content-Disposition'dan sadece tarayici gormus oluyor.
+        if (_hasSuggestedName) TxtFileName.Text = suggestedName;
         Loaded += OnLoaded;
     }
 
@@ -116,7 +123,8 @@ public partial class NewDownloadWindow : Window
 
     private void SetFileName(string name)
     {
-        if (!_userEditedFileName)
+        // Tarayicidan gelen ad varsa yoklamanin tahmini onu ezmesin.
+        if (!_userEditedFileName && !_hasSuggestedName)
         {
             var suppress = _loading;
             _loading = true;

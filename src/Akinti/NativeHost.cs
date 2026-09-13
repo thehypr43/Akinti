@@ -8,10 +8,14 @@ namespace Akinti;
 /// <summary>
 /// Chrome native messaging host.
 ///
-/// GUVENLIK SINIRI: Eklentiden gelen mesajdan SADECE "url" okunur.
-/// Hedef klasor, arsiv cikarma ve "yonetici olarak calistir" gibi alanlar
-/// bilerek yok sayilir - bunlar yalnizca kullanicinin gordugu diyalogda secilir.
-/// Eklenti ele gecirilse bile bu yolla yonetici yetkisiyle bir sey calistirilamaz.
+/// GUVENLIK SINIRI: Mesajdan yalnizca "url", "referrer" ve "filename" okunur.
+/// Ucu de yetki tasimaz: referrer sadece HTTP basligi, filename once Sanitize'dan
+/// gecirilip diyalogda kullaniciya gosterilir.
+///
+/// Hedef klasor, arsiv cikarma ve "yonetici olarak calistir" mesajdan HICBIR ZAMAN
+/// okunmaz; yalnizca kullanicinin gordugu diyalogda secilir. Eklenti ele gecirilse
+/// bile bu yolla ne yonetici yetkisiyle bir sey calistirilabilir ne de dosya
+/// istenen bir klasore yazdirilabilir.
 /// </summary>
 public static class NativeHost
 {
@@ -43,7 +47,7 @@ public static class NativeHost
 
     private static (bool Ok, string Reason) Handle(string json)
     {
-        string? url, referrer;
+        string? url, referrer, filename;
         try
         {
             using var doc = JsonDocument.Parse(json);
@@ -56,6 +60,11 @@ public static class NativeHost
             // yetki tasimaz. Bazi dosya siteleri onsuz 403 donuyor.
             referrer = Str(doc.RootElement, "referrer");
             if (referrer is not null && !UrlHelper.IsSupportedScheme(referrer)) referrer = null;
+
+            // Dosya adi ipucu. Yetki tasimaz ve yol olarak kullanilmaz:
+            // Sanitize yol ayiracini ve ".." yi temizler, kullanici diyalogda gorur.
+            filename = Str(doc.RootElement, "filename");
+            if (filename is not null) filename = UrlHelper.Sanitize(filename);
         }
         catch (JsonException)
         {
@@ -93,6 +102,11 @@ public static class NativeHost
             {
                 psi.ArgumentList.Add("--referrer");
                 psi.ArgumentList.Add(referrer);
+            }
+            if (!string.IsNullOrWhiteSpace(filename))
+            {
+                psi.ArgumentList.Add("--name");
+                psi.ArgumentList.Add(filename);
             }
             Process.Start(psi);
             return (true, "diyalog acildi");

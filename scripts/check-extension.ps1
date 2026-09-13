@@ -71,6 +71,13 @@ if ($allText -match 'sendNativeMessage|connectNative') {
     }
 }
 
+# setUiOptions ayri bir izin ister; API adindan anlasilmaz.
+if ($allText -match 'setUiOptions') {
+    if ($declared -notcontains 'downloads.ui') {
+        $problems += "downloads.setUiOptions kullaniliyor ama 'downloads.ui' izni YOK."
+    }
+}
+
 # ---- 2. Verilen sozler ----
 if ($manifest.PSObject.Properties.Name -contains 'host_permissions') {
     $problems += "host_permissions eklenmis. Eklentinin sayfalari okuyamamasi sozu bozuluyor."

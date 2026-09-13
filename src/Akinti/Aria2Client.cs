@@ -122,7 +122,7 @@ public sealed class Aria2Client : IDisposable
     // ---------------- Ekleme ----------------
 
     /// <summary>HTTP/FTP/magnet URI ekler, GID doner.</summary>
-    public async Task<string> AddUriAsync(string uri, Dictionary<string, string> options,
+    public async Task<string> AddUriAsync(string uri, Dictionary<string, object> options,
                                           CancellationToken ct = default)
     {
         var r = await CallAsync("aria2.addUri", [new[] { uri }, options], ct).ConfigureAwait(false);
@@ -130,7 +130,7 @@ public sealed class Aria2Client : IDisposable
     }
 
     /// <summary>.torrent dosyasini base64 olarak ekler, GID doner.</summary>
-    public async Task<string> AddTorrentAsync(byte[] torrent, Dictionary<string, string> options,
+    public async Task<string> AddTorrentAsync(byte[] torrent, Dictionary<string, object> options,
                                               CancellationToken ct = default)
     {
         var r = await CallAsync("aria2.addTorrent",

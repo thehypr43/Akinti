@@ -47,7 +47,7 @@ public static class NativeHost
 
     private static (bool Ok, string Reason) Handle(string json)
     {
-        string? url, referrer, filename;
+        string? url, referrer, filename, cookie, userAgent;
         try
         {
             using var doc = JsonDocument.Parse(json);
@@ -65,6 +65,12 @@ public static class NativeHost
             // Sanitize yol ayiracini ve ".." yi temizler, kullanici diyalogda gorur.
             filename = Str(doc.RootElement, "filename");
             if (filename is not null) filename = UrlHelper.Sanitize(filename);
+
+            // Cerez ve tarayici kimligi: yalnizca bu indirmenin HTTP basliklari
+            // olarak kullanilir. Satir sonu iceren bir deger baslik enjeksiyonuna
+            // yol acabilecegi icin reddedilir.
+            cookie = Clean(Str(doc.RootElement, "cookie"));
+            userAgent = Clean(Str(doc.RootElement, "userAgent"));
         }
         catch (JsonException)
         {
@@ -74,6 +80,11 @@ public static class NativeHost
         static string? Str(JsonElement el, string name) =>
             el.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
                 ? v.GetString() : null;
+
+        // Bosluk ya da kontrol karakteri (CR/LF dahil) iceren bir baslik
+        // degeri HTTP baslik enjeksiyonuna yol acabilir; boylesini hic gecirme.
+        static string? Clean(string? v) =>
+            string.IsNullOrWhiteSpace(v) || v.Any(char.IsControl) ? null : v;
 
         if (string.IsNullOrWhiteSpace(url))
             return (false, "url yok");
@@ -91,23 +102,25 @@ public static class NativeHost
             // UseShellExecute = true SART: false olsaydi diyalog, bu surecin Chrome'a
             // bagli stdin/stdout taniticilarini miras alirdi ve host cikse bile boru
             // acik kalirdi. ShellExecuteEx tanitici mirasi yapmaz.
+            // Cerez komut satirindan GECMEZ: baska sureclerce okunabilir.
+            // Kisa omurlu bir istek dosyasina yazilir, diyalog okuyup siler.
+            CapturedRequest.SweepStale();
+            var reqPath = new CapturedRequest
+            {
+                Url = url!,
+                Referrer = referrer,
+                FileName = filename,
+                Cookie = cookie,
+                UserAgent = userAgent,
+            }.Write();
+
             var psi = new ProcessStartInfo
             {
                 FileName = AppPaths.ExePath,
                 UseShellExecute = true,
             };
-            psi.ArgumentList.Add("--new");
-            psi.ArgumentList.Add(url!);
-            if (referrer is not null)
-            {
-                psi.ArgumentList.Add("--referrer");
-                psi.ArgumentList.Add(referrer);
-            }
-            if (!string.IsNullOrWhiteSpace(filename))
-            {
-                psi.ArgumentList.Add("--name");
-                psi.ArgumentList.Add(filename);
-            }
+            psi.ArgumentList.Add("--request");
+            psi.ArgumentList.Add(reqPath);
             Process.Start(psi);
             return (true, "diyalog acildi");
         }

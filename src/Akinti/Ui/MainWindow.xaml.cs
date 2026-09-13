@@ -346,7 +346,9 @@ public partial class MainWindow : Window
     }
 
     private void BtnNew_Click(object sender, RoutedEventArgs e) =>
-        new NewDownloadWindow(null) { Owner = this }.Show();
+        // (string?)null sart: CapturedRequest asiri yuklemesi eklendiginden
+        // duz null hangi kurucuya gidecegi belirsiz kaliyor.
+        new NewDownloadWindow((string?)null) { Owner = this }.Show();
 
     private async void BtnToggleAll_Click(object sender, RoutedEventArgs e)
     {

@@ -19,14 +19,42 @@ Bunlar tasarım kararı, ayar değil. Kapatılabilir bir şey değiller çünkü
 
 | Yapmadığı şey | Neden önemli |
 |---|---|
-| `chrome.downloads` kullanmaz | Tarayıcının kendi indirmelerini ele geçirmez |
 | Content script enjekte etmez | Sayfaya buton, banner, medya sniffer yapıştırmaz |
-| `host_permissions` istemez | Hiçbir sayfanın içeriğini okuyamaz — `chrome://extensions`'da "bu site verilerinizi okuyabilir" yazmaz |
 | Panoyu dinlemez | Kopyaladığın link indirme başlatmaz |
 | Bildirim göstermez | Toast çıkmaz |
+| `webRequest` kullanmaz | Trafiğin izlenmez |
 | Protokol handler kaydetmez | Hiçbir site `akinti://...` ile uygulamayı tetikleyemez |
 
-Her indirme, senin gördüğün bir diyalogdan açık onay ister.
+Her indirme, senin gördüğün bir diyalogdan açık onay ister. Yakalama eklenti
+simgesinden kapatılabilir; sağ tık menüsü her hâlükârda çalışır.
+
+`scripts/check-extension.ps1` bu listeyi kurulumda zorlar: beklenmeyen bir izin
+ya da content script eklenirse kurulum durur.
+
+## Eklentinin istediği izinler
+
+| İzin | Ne için |
+|---|---|
+| `contextMenus` | Sağ tık menüsü |
+| `nativeMessaging` | Masaüstü uygulamasına devretmek |
+| `downloads` | Chrome'un indirmesini duraklatıp devralmak |
+| `downloads.ui` | Devralınca Chrome'un boş indirme balonunu gizlemek |
+| `storage` | Yakalama anahtarının durumu |
+| `cookies` + `<all_urls>` | **Oturum çerezlerini indirmeye taşımak** |
+
+Son satır bilinçli bir taviz. Gofile, Mega gibi siteler dosyayı yalnızca oturum
+çerezine karşılık veriyor; çerez olmadan sunucu dosya yerine kendi HTML sayfasını
+gönderiyor ve indirme sessizce 3 KB'lık çöp bir dosyaya dönüşüyor. Bunun bedeli
+Chrome'un eklenti sayfasında "tüm web sitelerindeki verilerinizi okuyabilir"
+yazması.
+
+Çerez yalnızca **indirilecek adres için** okunur (`chrome.cookies.getAll({url})`)
+ve yalnızca o indirmenin `Cookie` başlığı olarak geçer. Sayfa içeriği hâlâ
+hiçbir yerde okunmuyor — content script yok.
+
+Çerezin komut satırından geçmediğine dikkat: Windows'ta bir sürecin komut satırı
+makinedeki diğer süreçlerden okunabiliyor. Onun yerine `%APPDATA%\Akinti` altına
+kısa ömürlü bir istek dosyası yazılır, diyalog okur okumaz siler.
 
 ## Güvenlik
 
@@ -105,7 +133,7 @@ src/Akinti/          Tek WPF projesi, tek exe, argümana göre çok mod
   PostActions.cs        İndirme sonrası: çıkar, yönetici çalıştır, klasör aç
   NativeHost.cs         Chrome köprüsü (güvenlik sınırı burada)
   Ui/                   Pencereler + Theme.xaml
-extension/chrome/     MV3 eklenti, host_permissions yok
+extension/chrome/     MV3 eklenti (sağ tık + yakalama + çerez devri)
 scripts/              install / uninstall / fetch-aria2 / make-icons
 ```
 

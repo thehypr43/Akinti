@@ -68,6 +68,22 @@ public partial class App : Application
         }
 
         // --- Yeni indirme diyalogu ---
+        // --- Tarayicidan devralinan indirme (cerez iceren istek dosyasi) ---
+        var reqIndex = Array.IndexOf(args, "--request");
+        if (reqIndex >= 0 && reqIndex + 1 < args.Length)
+        {
+            ShutdownMode = ShutdownMode.OnLastWindowClose;
+            var captured = CapturedRequest.ReadAndDelete(args[reqIndex + 1]);
+            if (captured is null || string.IsNullOrWhiteSpace(captured.Url))
+            {
+                Log.Error("Devralinan istek okunamadi, diyalog acilmadi.");
+                Shutdown(1);
+                return;
+            }
+            new NewDownloadWindow(captured).Show();
+            return;
+        }
+
         var newIndex = Array.IndexOf(args, "--new");
         if (newIndex >= 0 && newIndex + 1 < args.Length)
         {

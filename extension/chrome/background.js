@@ -6,14 +6,19 @@
 //      Eklenti simgesine tıklayıp kapatılabilir.
 //
 // BU DOSYANIN YAPMADIKLARI - bilerek ve kalıcı olarak:
-//   * host_permissions YOK          -> hiçbir sayfanın içeriği okunamaz
-//   * content script YOK            -> sayfaya buton/banner/overlay enjekte edilmez
-//   * clipboard dinleme YOK         -> kopyaladığın link indirme başlatmaz
-//   * notifications YOK             -> toast çıkmaz
-//   * cookies / webRequest YOK
+//   * content script YOK   -> sayfaya buton/banner/overlay enjekte edilmez
+//   * clipboard dinleme YOK -> kopyaladığın link indirme başlatmaz
+//   * notifications YOK     -> toast çıkmaz
+//   * webRequest YOK        -> trafik izlenmez
 //
-// "downloads" izni sadece indirmeyi görmeye ve iptal etmeye yarar; sayfa okuma
-// yetkisi vermez. Chrome bunu "İndirmelerinizi yönetin" diye gösterir.
+// ÇEREZ: Kullanıcının açık tercihiyle "cookies" + <all_urls> izni alındı.
+// Gofile gibi siteler dosyayı yalnızca oturum çerezine karşılık veriyor;
+// çerez olmadan sunucu dosya yerine HTML sayfası gönderiyor ve indirme
+// sessizce çöp bir dosyaya dönüşüyordu.
+//
+// Çerezler SADECE indirilecek adres için okunur (chrome.cookies.getAll({url}))
+// ve yalnızca o indirmenin Cookie başlığı olarak masaüstü tarafına geçer.
+// Sayfa içeriği hâlâ hiçbir yerde okunmuyor.
 
 const HOST = "com.akinti.host";
 const CAPTURE_KEY = "capture";
@@ -102,23 +107,47 @@ chrome.downloads.onCreated.addListener(async (item) => {
     const base = baseName(item.filename);
     if (base) msg.filename = base;
 
-    chrome.runtime.sendNativeMessage(HOST, msg, (reply) => {
-      const failed = chrome.runtime.lastError || !reply || reply.ok !== true;
-      if (failed) {
-        const why = chrome.runtime.lastError?.message || reply?.reason || "bilinmeyen sebep";
-        console.warn("Akıntı devralamadı, indirme Chrome'a bırakıldı:", why);
-        showDownloadUi();   // Chrome indirecek, kullanici gorebilsin
-        chrome.downloads.resume(item.id, () => void chrome.runtime.lastError);
-        return;
-      }
-      // Devir tamam: Chrome'un kopyasini iptal et ve listesinden sil.
-      chrome.downloads.cancel(item.id, () => {
-        if (chrome.runtime.lastError) return;
-        chrome.downloads.erase({ id: item.id }, () => void chrome.runtime.lastError);
-      });
-    });
+    handOver(item, msg);
   });
 });
+
+// Çerez toplama asenkron; devir mantığı tek yerde dursun diye ayrı fonksiyon.
+async function handOver(item, msg) {
+  Object.assign(msg, await sessionHeaders(msg.url));
+
+  chrome.runtime.sendNativeMessage(HOST, msg, (reply) => {
+    if (chrome.runtime.lastError || !reply || reply.ok !== true) {
+      const why = chrome.runtime.lastError?.message || reply?.reason || "bilinmeyen sebep";
+      console.warn("Akıntı devralamadı, indirme Chrome'a bırakıldı:", why);
+      showDownloadUi();     // Chrome indirecek, kullanıcı görebilsin
+      chrome.downloads.resume(item.id, () => void chrome.runtime.lastError);
+      return;
+    }
+    // Devir tamam: Chrome'un kopyasını iptal et ve listesinden sil.
+    chrome.downloads.cancel(item.id, () => {
+      if (chrome.runtime.lastError) return;
+      chrome.downloads.erase({ id: item.id }, () => void chrome.runtime.lastError);
+    });
+  });
+}
+
+// Adrese ait cerezler ve tarayicinin kimlik dizesi. aria2 varsayilan olarak
+// kendi User-Agent'ini gonderiyor; bazi siteler buna da bakiyor.
+async function sessionHeaders(url) {
+  const out = {};
+  try {
+    const cookies = await chrome.cookies.getAll({ url });
+    if (cookies.length > 0) {
+      out.cookie = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+    }
+  } catch (e) {
+    console.warn("Akıntı: çerez okunamadı, çerezsiz devam ediliyor.", e);
+  }
+  try {
+    if (navigator?.userAgent) out.userAgent = navigator.userAgent;
+  } catch { /* onemsiz */ }
+  return out;
+}
 
 // ───────────────────────── Açma/kapama ─────────────────────────
 
@@ -155,10 +184,13 @@ chrome.storage?.onChanged?.addListener((changes, area) => {
 // Mesajda yalnızca url, referrer ve dosya adı ipucu var. Hedef klasör, arşiv
 // çıkarma ve "yönetici olarak çalıştır" bilerek gönderilmiyor; onlar yalnızca
 // masaüstü uygulamasının diyaloğunda, kullanıcının kendi eliyle seçilir.
-function send(url, referrer) {
+async function send(url, referrer) {
   const msg = { url };
   const ref = valid(referrer);
   if (ref) msg.referrer = ref;          // bazı dosya siteleri Referer başlığı ister
+
+  // Sağ tıkla indirilen bağlantı da oturum gerektirebilir; aynı başlıklar gitsin.
+  Object.assign(msg, await sessionHeaders(url));
 
   chrome.runtime.sendNativeMessage(HOST, msg, () => {
     if (chrome.runtime.lastError) {

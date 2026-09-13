@@ -78,14 +78,36 @@ if ($allText -match 'setUiOptions') {
     }
 }
 
-# ---- 2. Verilen sozler ----
-if ($manifest.PSObject.Properties.Name -contains 'host_permissions') {
-    $problems += "host_permissions eklenmis. Eklentinin sayfalari okuyamamasi sozu bozuluyor."
+# ---- 2. Beklenen izin kumesi ----
+# Amac: yeni bir izin fark edilmeden eklenemesin. Listeye bir sey eklemek
+# bilincli bir karar olmali, bu yuzden degisiklik burada da gorunur olsun.
+#
+# cookies + <all_urls> kullanicinin acik tercihiyle eklendi: Gofile gibi
+# siteler dosyayi yalnizca oturum cerezine karsilik veriyor, cerezsiz indirme
+# dosya yerine HTML sayfasi kaydediyordu.
+$expected = @('contextMenus', 'nativeMessaging', 'downloads', 'downloads.ui', 'storage', 'cookies')
+
+foreach ($d in $declared) {
+    if ($expected -notcontains $d) {
+        $problems += "'$d' izni beklenmiyor. Bilerek ekledinse check-extension.ps1 icindeki listeyi guncelle."
+    }
 }
+
+$expectedHosts = @('<all_urls>')
+$hosts = @()
+if ($manifest.PSObject.Properties.Name -contains 'host_permissions') { $hosts = @($manifest.host_permissions) }
+foreach ($h in $hosts) {
+    if ($expectedHosts -notcontains $h) {
+        $problems += "host_permissions icinde beklenmeyen giris: '$h'."
+    }
+}
+
+# Bunlar hala kesinlikle disarida: sayfaya kod enjekte etmek ve trafigi izlemek
+# hicbir zaman gerekmedi.
 if ($manifest.PSObject.Properties.Name -contains 'content_scripts') {
     $problems += "content_scripts eklenmis. Sayfaya kod enjekte edilmemesi sozu bozuluyor."
 }
-foreach ($banned in 'cookies', 'webRequest', 'clipboardRead', 'tabs', '<all_urls>') {
+foreach ($banned in 'webRequest', 'webRequestBlocking', 'clipboardRead', 'history', 'bookmarks') {
     if ($declared -contains $banned) {
         $problems += "'$banned' izni eklenmis. Bu izin bilerek disarida birakilmisti."
     }

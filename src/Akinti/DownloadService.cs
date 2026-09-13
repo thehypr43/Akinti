@@ -18,6 +18,13 @@ public sealed class DownloadRequest
     /// kullanilir; bazi dosya siteleri onsuz 403 donuyor.</summary>
     public string? Referrer { get; set; }
 
+    /// <summary>Tarayicinin o adres icin tuttugu cerezler ("ad=deger; ...").
+    /// Gofile gibi siteler dosyayi yalnizca oturum cerezine karsilik veriyor.</summary>
+    public string? Cookie { get; set; }
+
+    /// <summary>Tarayicinin kimlik dizesi; bazi siteler aria2'nin kendi UA'sini reddediyor.</summary>
+    public string? UserAgent { get; set; }
+
     // --- Indirme sonrasi (SADECE diyalogdan isaretlenebilir) ---
     public bool Extract { get; set; }
     public bool DeleteArchiveAfterExtract { get; set; }
@@ -44,12 +51,18 @@ public static class DownloadService
 
         Directory.CreateDirectory(req.TargetDir);
 
-        var options = new Dictionary<string, string>
+        var options = new Dictionary<string, object>
         {
             ["dir"] = req.TargetDir,
             ["max-connection-per-server"] = req.Connections.ToString(),
             ["split"] = req.Connections.ToString(),
         };
+
+        // aria2'nin "header" secenegi coklu; RPC'ye dizi olarak verilir.
+        var headers = new List<string>();
+        if (!string.IsNullOrWhiteSpace(req.Cookie)) headers.Add("Cookie: " + req.Cookie);
+        if (!string.IsNullOrWhiteSpace(req.UserAgent)) options["user-agent"] = req.UserAgent!;
+        if (headers.Count > 0) options["header"] = headers.ToArray();
 
         if (req.SpeedLimitBytes > 0)
             options["max-download-limit"] = req.SpeedLimitBytes.ToString();

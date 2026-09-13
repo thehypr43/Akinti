@@ -18,6 +18,16 @@ public partial class NewDownloadWindow : Window
     private readonly Config _cfg = Config.Load();
     private readonly string? _referrer;
     private readonly bool _hasSuggestedName;
+    private string? _cookie;
+    private string? _userAgent;
+
+    /// <summary>Tarayicidan devralinan indirme: adres, ad, cerez ve kimlik dizesi hazir gelir.</summary>
+    public NewDownloadWindow(CapturedRequest captured)
+        : this(captured.Url, captured.Referrer, captured.FileName)
+    {
+        _cookie = captured.Cookie;
+        _userAgent = captured.UserAgent;
+    }
     private CancellationTokenSource? _probeCts;
     private bool _folderTouchedByUser;
     private bool _userEditedFileName;
@@ -273,6 +283,8 @@ public partial class NewDownloadWindow : Window
             RunAsAdmin = ChkRunAdmin.IsChecked == true,
             OpenFolder = ChkOpenFolder.IsChecked == true,
             Referrer = _referrer,
+            Cookie = _cookie,
+            UserAgent = _userAgent,
         };
 
         if (PnlTorrent.Visibility == Visibility.Visible

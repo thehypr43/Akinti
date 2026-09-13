@@ -78,18 +78,31 @@ chrome.downloads.onCreated.addListener(async (item) => {
 
 // ───────────────────────── Açma/kapama ─────────────────────────
 
+// Not: bu dosyanin en ust seviyesinde tanimsiz bir chrome.* API'sine dokunmak
+// service worker'i daha yuklenirken dusurur ve eklentinin TAMAMI sessizce olur
+// (sag tik dahil). Bir izin eksik kalirsa tek ozellik bozulsun diye her sey
+// korumali cagriliyor.
 async function captureEnabled() {
-  const v = await chrome.storage.local.get(CAPTURE_KEY);
-  return v[CAPTURE_KEY] !== false;      // varsayılan açık
+  try {
+    const v = await chrome.storage.local.get(CAPTURE_KEY);
+    return v[CAPTURE_KEY] !== false;    // varsayılan açık
+  } catch (e) {
+    console.warn("Akıntı: ayar okunamadı, yakalama açık kabul edildi.", e);
+    return true;
+  }
 }
 
 async function refreshBadge() {
-  const on = await captureEnabled();
-  await chrome.action.setBadgeText({ text: on ? "" : "OFF" });
-  await chrome.action.setBadgeBackgroundColor({ color: "#595D6C" });
+  try {
+    const on = await captureEnabled();
+    await chrome.action.setBadgeText({ text: on ? "" : "OFF" });
+    await chrome.action.setBadgeBackgroundColor({ color: "#595D6C" });
+  } catch (e) {
+    console.warn("Akıntı: rozet güncellenemedi.", e);
+  }
 }
 
-chrome.storage.onChanged.addListener((changes, area) => {
+chrome.storage?.onChanged?.addListener((changes, area) => {
   if (area === "local" && CAPTURE_KEY in changes) refreshBadge();
 });
 

@@ -71,6 +71,9 @@ Start-Sleep -Milliseconds 400
 Copy-Item -Path (Join-Path $pub '*') -Destination $InstallDir -Recurse -Force
 Copy-Item -Path $aria2 -Destination (Join-Path $InstallDir 'tools\aria2c.exe') -Force
 
+Step 'Eklenti kontrol ediliyor'
+& (Join-Path $PSScriptRoot 'check-extension.ps1') -ExtDir (Join-Path $RepoRoot 'extension\chrome')
+
 New-Item -ItemType Directory -Force -Path $ExtDir | Out-Null
 Copy-Item -Path (Join-Path $RepoRoot 'extension\chrome\*') -Destination $ExtDir -Recurse -Force
 

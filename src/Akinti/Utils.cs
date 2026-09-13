@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -153,6 +153,26 @@ public static class Icons
             ".torrent" => "\uE896",
             ".pdf" or ".docx" or ".xlsx" or ".pptx" or ".epub" or ".txt" => "\uE8A5",
             _ => "\uE7C3",
+        };
+    }
+
+    /// <summary>Dosyanin ne oldugunu tek kelimeyle soyler: "Uygulama", "Arsiv"...
+    /// Bitmis indirme penceresinde boyutun yanina yaziliyor.</summary>
+    public static string KindOf(string nameOrPath, bool isTorrent = false)
+    {
+        if (isTorrent) return "Torrent";
+        return Path.GetExtension(nameOrPath).ToLowerInvariant() switch
+        {
+            ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".wmv" => "Video",
+            ".mp3" or ".flac" or ".wav" or ".m4a" or ".opus" or ".ogg" => "Ses",
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" or ".avif" or ".bmp" => "Resim",
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" or ".xz" or ".zst" or ".bz2" => "Arşiv",
+            ".exe" or ".msi" or ".msix" => "Uygulama",
+            ".bat" or ".cmd" or ".ps1" => "Betik",
+            ".iso" or ".img" => "Disk imajı",
+            ".torrent" => "Torrent",
+            ".pdf" or ".docx" or ".xlsx" or ".pptx" or ".epub" or ".txt" => "Belge",
+            _ => "Dosya",
         };
     }
 }

@@ -8,8 +8,8 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 
 - **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
 - **Her şey indirme klasörüne.** Türe göre otomatik alt klasörleme yok; klasörü istersen indirme penceresinden tek tek değiştirirsin.
-- **İndirince arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre.
-- **İndirince yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
+- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. Listede satıra sağ tıkla; her indirmede otomatik olsun istiyorsan Ayarlar'dan aç.
+- **Yönetici olarak çalıştır.** Kurulum dosyaları için, satır menüsünden. UAC onayı Windows tarafından sorulur.
 - **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
@@ -155,4 +155,23 @@ Sorun olursa: `%APPDATA%\Akinti\akinti.log`
 
 ## Tasarım
 
-Arayüz renkleri, tipografi ve köşe yarıçapları `src/Akinti/Ui/Theme.xaml` içinde token olarak durur. Tasarım değişikliği pencere XAML'lerine dokunmadan oradan yapılır.
+Windows 11'in kendi görünümü. Açık/koyu tema ve vurgu rengi **sistemden** okunur
+(`Ui/ThemeManager.cs`): Windows'ta temayı değiştirdiğinde açık pencereler de anında döner.
+Pencerelerin yuvarlatılmış köşesi ve ince kenar çizgisi DWM'den gelir (`Ui/WindowEffects.cs`).
+
+Ölçüler, köşe yarıçapları, tipografi ve denetim şablonları `src/Akinti/Ui/Theme.xaml`
+içinde durur; renkler orada **yok**, hepsi çalışma anında paletten gelir.
+
+İki temayı da denemek için Windows ayarını kurcalamaya gerek yok:
+
+```bash
+set AKINTI_THEME=light
+```
+
+### Üç pencere
+
+| Pencere | Ne zaman |
+|---|---|
+| Bağlantı yakalandı | Sağ tık ya da Chrome'dan devralınan indirme. Dosya, kayıt klasörü, iki düğme — başka hiçbir şey. |
+| İndiriliyor | "İndir"e basınca diyaloğun yerine ekranın ortasında açılır. Kapatmak indirmeyi durdurmaz. |
+| İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Başarılıysa kendiliğinden kapanır, hatada kalır. |

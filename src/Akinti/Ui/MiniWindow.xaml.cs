@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Akinti.Ui;
 
 /// <summary>
-/// Kucuk ilerleme penceresi.
+/// Ilerleme penceresi.
 ///
 /// Bu pencere olmadan indirme baslattiktan sonra HICBIR geri bildirim yoktu:
 /// tepsi ikonu yok (istenmedi), bildirim yok (istenmedi), ana pencere de kapali.
@@ -20,13 +21,21 @@ public partial class MiniWindow : Window
 {
     private readonly Config _cfg;
     private readonly DispatcherTimer _timer;
+    private readonly Stopwatch _watch = Stopwatch.StartNew();
     private Aria2Client? _client;
     private string _gid;
     private bool _finished;
 
+    /// <summary>Pencere indirmeyi en basindan gordu mu? Gormediyse gecen sure
+    /// yanlis olur, o yuzden sonuc penceresinde "sure" hic gosterilmez.</summary>
+    private bool _sawFromStart;
+    private bool _firstSample = true;
+
     public MiniWindow(Config cfg, string gid)
     {
         InitializeComponent();
+        WindowEffects.Attach(this);
+
         _cfg = cfg;
         _gid = gid;
 
@@ -43,14 +52,18 @@ public partial class MiniWindow : Window
 
         _client = new Aria2Client(_cfg);
         await RefreshAsync();
-        _timer.Start();
+
+        // Ilk yoklama indirmeyi bitmis bulduysa pencere burada zaten kapandi.
+        // Sayaci yine de baslatmak, kapali pencerenin arkasinda saniyede bir
+        // atilan olu bir istek birakiyordu.
+        if (!_finished) _timer.Start();
     }
 
     // ──────────── Yenileme ────────────
 
     private async Task RefreshAsync()
     {
-        if (_client is null) return;
+        if (_client is null || _finished) return;
         try
         {
             // Magnet eklendiginde asil torrent yeni bir GID'e tasinir.
@@ -64,19 +77,23 @@ public partial class MiniWindow : Window
         }
         catch (Exception ex)
         {
-            Log.Warn("Mini pencere yenilenemedi: " + ex.Message);
+            Log.Warn("Ilerleme penceresi yenilenemedi: " + ex.Message);
         }
     }
 
     private void Apply(DownloadItem item)
     {
+        if (_firstSample)
+        {
+            _firstSample = false;
+            _sawFromStart = item.Progress < 0.02;
+            _watch.Restart();
+        }
+
         TxtName.Text = item.DisplayName;
         IcoFile.Text = Icons.ForFile(item.FilePath ?? item.DisplayName, item.IsTorrent);
 
         Bar.Value = item.Progress * 100;
-        Bar.Foreground = item.Status == Aria2Status.Error
-            ? (System.Windows.Media.Brush)FindResource("B.Danger")
-            : (System.Windows.Media.Brush)FindResource("B.Accent");
 
         var host = string.IsNullOrEmpty(item.SourceUri) ? ""
             : Uri.TryCreate(item.SourceUri, UriKind.Absolute, out var u) ? u.Host : "";
@@ -93,7 +110,8 @@ public partial class MiniWindow : Window
                 return;
         }
 
-        TxtHeader.Text = item.Status == Aria2Status.Paused ? "Duraklatıldı" : "İndiriliyor";
+        var paused = item.Status == Aria2Status.Paused;
+        DotState.Fill = (Brush)FindResource(paused ? "B.TextFaint" : "B.Accent");
         TxtPct.Text = $"{(int)(item.Progress * 100)}%";
 
         TxtMeta.Text = item.TotalLength > 0
@@ -107,25 +125,33 @@ public partial class MiniWindow : Window
         TxtRemaining.Text = item.TotalLength > item.CompletedLength
             ? Format.Bytes(item.TotalLength - item.CompletedLength) : "—";
         TxtSpeed.Text = item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";
-        TxtEta.Text = item.Eta is { } eta ? Format.Duration(eta) : "—";
+        TxtEta.Text = item.Eta is { } eta ? Format.Duration(eta) + " kaldı" : "—";
 
-        IcoToggle.Text = item.Status == Aria2Status.Active ? "" : "";
+        IcoToggle.Text = paused ? "" : "";
 
-        _ = UpdateQueueNoteAsync();
+        _ = UpdateCountsAsync(paused);
     }
 
-    /// <summary>Tasarimdaki "miniQueueNote": bu pencere tek indirmeyi gosterir,
-    /// arkada baskalari varsa en azindan sayisi yazsin.</summary>
-    private async Task UpdateQueueNoteAsync()
+    /// <summary>Bu pencere tek indirmeyi gosterir; arkada baskalari varsa
+    /// hem baslik hem alt satir bunu soylesin.</summary>
+    private async Task UpdateCountsAsync(bool paused)
     {
         if (_client is null) return;
         try
         {
             var stat = await _client.GetGlobalStatAsync();
-            var others = stat.NumActive + stat.NumWaiting - 1;
-            TxtNote.Text = others > 0 ? $"{others} indirme daha sürüyor" : "";
+
+            TxtHeader.Text = paused ? "Duraklatıldı"
+                : stat.NumActive > 1 ? $"{stat.NumActive} indirme sürüyor"
+                : "İndiriliyor";
+
+            TxtNote.Text = stat.NumWaiting > 0 ? $"{stat.NumWaiting} indirme sırada" : "Kuyruk boş";
         }
-        catch { TxtNote.Text = ""; }
+        catch
+        {
+            TxtHeader.Text = paused ? "Duraklatıldı" : "İndiriliyor";
+            TxtNote.Text = "";
+        }
     }
 
     /// <summary>Ilerleme penceresini kapatip sonuc penceresini acar.
@@ -138,7 +164,7 @@ public partial class MiniWindow : Window
         _finished = true;
         _timer.Stop();
 
-        try { new DoneWindow(item).Show(); }
+        try { new DoneWindow(item, _sawFromStart ? _watch.Elapsed : null).Show(); }
         catch (Exception ex) { Log.Error("Sonuc penceresi acilamadi", ex); }
 
         Close();
@@ -187,5 +213,4 @@ public partial class MiniWindow : Window
         catch (Exception ex) { Log.Warn("Iptal basarisiz: " + ex.Message); }
         Close();
     }
-
 }

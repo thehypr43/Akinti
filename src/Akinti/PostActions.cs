@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Akinti;
@@ -165,23 +165,85 @@ public static class PostActions
         }
     }
 
+    /// <summary>
+    /// Dosyayi Gezgin'de secili olarak gosterir.
+    ///
+    /// Bunun icin "explorer.exe /select,&lt;yol&gt;" KULLANILMIYOR: o yol argumani
+    /// komut satirindan gectigi icin icinde virgul, bosluk ya da Turkce karakter
+    /// olan dosyalarda Gezgin yolu cozemeyip Belgeler klasorunu aciyor. Kabuk
+    /// arayuzu yolu metin olarak degil, dogrudan nesne olarak aliyor.
+    /// </summary>
     public static void OpenFolder(string filePath)
     {
         try
         {
-            if (File.Exists(filePath))
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{filePath}\"")
-                    { UseShellExecute = true });
-            else
-            {
-                var dir = Directory.Exists(filePath) ? filePath : Path.GetDirectoryName(filePath);
-                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-                    Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
-            }
+            if (string.IsNullOrWhiteSpace(filePath)) return;
+            var full = Path.GetFullPath(filePath);
+
+            if (File.Exists(full) && SelectInExplorer(full)) return;
+
+            var dir = Directory.Exists(full) ? full : Path.GetDirectoryName(full);
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
             Log.Warn("Klasor acilamadi: " + ex.Message);
+        }
+    }
+
+    /// <summary>aria2 bazen yolu bos ya da goreli veriyor; elimizdekinden en iyi
+    /// tam yolu uretir.</summary>
+    public static string ResolveFilePath(string? reportedPath, string? dir, string? fileName)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(reportedPath))
+            {
+                var p = reportedPath!.Replace('/', '\\');
+                if (Path.IsPathFullyQualified(p)) return Path.GetFullPath(p);
+                if (!string.IsNullOrWhiteSpace(dir)) return Path.GetFullPath(Path.Combine(dir!, p));
+            }
+
+            if (!string.IsNullOrWhiteSpace(dir) && !string.IsNullOrWhiteSpace(fileName))
+                return Path.GetFullPath(Path.Combine(dir!, fileName!));
+
+            return string.IsNullOrWhiteSpace(dir) ? "" : Path.GetFullPath(dir!);
+        }
+        catch
+        {
+            return reportedPath ?? "";
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int SHParseDisplayName(string name, IntPtr bindCtx, out IntPtr pidl,
+                                                 uint sfgaoIn, out uint sfgaoOut);
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern int SHOpenFolderAndSelectItems(IntPtr pidlFolder, uint cidl,
+                                                         IntPtr[]? apidl, uint flags);
+
+    [System.Runtime.InteropServices.DllImport("ole32.dll")]
+    private static extern void CoTaskMemFree(IntPtr ptr);
+
+    private static bool SelectInExplorer(string fullPath)
+    {
+        var pidl = IntPtr.Zero;
+        try
+        {
+            if (SHParseDisplayName(fullPath, IntPtr.Zero, out pidl, 0, out _) != 0 || pidl == IntPtr.Zero)
+                return false;
+            return SHOpenFolderAndSelectItems(pidl, 0, null, 0) == 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Gezginde secilemedi: " + ex.Message);
+            return false;
+        }
+        finally
+        {
+            if (pidl != IntPtr.Zero) CoTaskMemFree(pidl);
         }
     }
 

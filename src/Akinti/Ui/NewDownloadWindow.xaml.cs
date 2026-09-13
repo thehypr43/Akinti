@@ -1,4 +1,3 @@
-﻿using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -7,18 +6,27 @@ namespace Akinti.Ui;
 
 /// <summary>
 /// Her indirmenin goz onunde onaylandigi yer. Eklentiden gelen mesaj sadece adresi
-/// belirler; hedef klasor, arsiv cikarma ve "yonetici olarak calistir" YALNIZCA burada,
-/// kullanicinin kendi eliyle secilir.
+/// belirler; hedef klasor YALNIZCA burada, kullanicinin kendi eliyle degistirilir.
+///
+/// Pencere bilerek kucuk: dosya, nereye inecegi ve iki dugme. Indirme sonrasi
+/// davranislar (arsiv cikarma, klasoru acma) Ayarlar'dan bir kez secilir, her
+/// indirmede tekrar sorulmaz; tek seferlik "yonetici olarak calistir" gibi
+/// isler ana penceredeki satir menusunde durur.
 /// </summary>
 public partial class NewDownloadWindow : Window
 {
-    private static readonly string[] RunnableExtensions = [".exe", ".msi", ".msix", ".bat", ".cmd", ".ps1"];
-
     private readonly Config _cfg = Config.Load();
     private readonly string? _referrer;
     private readonly bool _hasSuggestedName;
     private string? _cookie;
     private string? _userAgent;
+
+    private CancellationTokenSource? _probeCts;
+    private string _folder;
+    private string _fileName = "";
+    private bool _isTorrentSource;
+    private bool _userEditedFileName;
+    private bool _loading = true;
 
     /// <summary>Tarayicidan devralinan indirme: adres, ad, cerez ve kimlik dizesi hazir gelir.</summary>
     public NewDownloadWindow(CapturedRequest captured)
@@ -27,34 +35,30 @@ public partial class NewDownloadWindow : Window
         _cookie = captured.Cookie;
         _userAgent = captured.UserAgent;
     }
-    private CancellationTokenSource? _probeCts;
-    private bool _userEditedFileName;
-    private bool _userTouchedExtract;
-    private bool _loading = true;
 
     public NewDownloadWindow(string? url, string? referrer = null, string? suggestedName = null)
     {
         InitializeComponent();
+        WindowEffects.Attach(this);
+
         _referrer = referrer;
         _hasSuggestedName = !string.IsNullOrWhiteSpace(suggestedName);
 
-        for (var i = 1; i <= 16; i++) CmbConnections.Items.Add(i);
-        CmbConnections.SelectedIndex = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16) - 1;
-
-        foreach (var f in _cfg.RecentFolders) CmbFolder.Items.Add(f);
-        if (!CmbFolder.Items.Contains(_cfg.DownloadDir)) CmbFolder.Items.Add(_cfg.DownloadDir);
-        CmbFolder.Text = _cfg.DownloadDir;
-
-        ChkOpenFolder.IsChecked = _cfg.OpenFolderAfterDownloadDefault;
-        TxtSeedRatio.Text = _cfg.SeedRatio.ToString(CultureInfo.InvariantCulture);
+        _folder = _cfg.DownloadDir;
+        TxtFolder.Text = _folder;
 
         TxtUrl.Text = url ?? "";
         TxtDialogTitle.Text = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
 
+        // Adres ve dosya adi kutulari yalnizca elle indirmede gerekli. Tarayicidan
+        // gelen baglantida ikisi de belli; gostermek sadece kalabalik olurdu.
+        PnlManual.Visibility = url is null ? Visibility.Visible : Visibility.Collapsed;
+
         // Tarayicinin buldugu ad, adresten tahmin etmekten daima daha iyidir:
         // dosya barindirma siteleri adreste GUID kullaniyor, gercek adi
         // Content-Disposition'dan sadece tarayici gormus oluyor.
-        if (_hasSuggestedName) TxtFileName.Text = suggestedName;
+        if (_hasSuggestedName) SetFileName(suggestedName!, force: true);
+
         Loaded += OnLoaded;
     }
 
@@ -72,7 +76,6 @@ public partial class NewDownloadWindow : Window
             TxtUrl.Focus();
             TxtSize.Text = "Bir adres yapıştırın";
             TxtFileTitle.Text = "—";
-            UpdateOptionAvailability();
             return;
         }
 
@@ -88,12 +91,13 @@ public partial class NewDownloadWindow : Window
         {
             TxtSize.Text = "";
             TxtStatus.Text = string.IsNullOrWhiteSpace(url) ? "" : "Desteklenmeyen adres.";
-            UpdateOptionAvailability();
             return;
         }
 
         TxtStatus.Text = "";
-        UpdateTorrentPanel(url);
+
+        _isTorrentSource = UrlHelper.IsMagnet(url) || UrlHelper.IsTorrentFileUrl(url);
+        ChkPickFiles.Visibility = _isTorrentSource ? Visibility.Visible : Visibility.Collapsed;
 
         _probeCts?.Cancel();
         _probeCts = new CancellationTokenSource();
@@ -105,7 +109,6 @@ public partial class NewDownloadWindow : Window
         {
             SetFileName(UrlHelper.GuessFileName(url));
             TxtSize.Text = "Boyut torrent bilgileri gelince belli olur";
-            UpdateOptionAvailability();
             return;
         }
 
@@ -121,31 +124,31 @@ public partial class NewDownloadWindow : Window
             : (host.Length > 0 ? "Boyut bilinmiyor  ·  " + host : "Boyut bilinmiyor");
 
         if (info.Size > 0 && !info.Resumable)
-            TxtStatus.Text = "Sunucu parçalı indirmeyi desteklemiyor, tek bağlantı kullanılacak.";
-
-        UpdateOptionAvailability();
+            TxtStatus.Text = "Sunucu parçalı indirmeyi desteklemiyor.";
     }
 
-    private void SetFileName(string name)
+    private void SetFileName(string name, bool force = false)
     {
         // Tarayicidan gelen ad varsa yoklamanin tahmini onu ezmesin.
-        if (!_userEditedFileName && !_hasSuggestedName)
+        if (force || (!_userEditedFileName && !_hasSuggestedName))
         {
+            _fileName = name;
             var suppress = _loading;
             _loading = true;
             TxtFileName.Text = name;
             _loading = suppress;
         }
-        TxtFileTitle.Text = string.IsNullOrWhiteSpace(TxtFileName.Text) ? "—" : TxtFileName.Text;
-        IcoFile.Text = Icons.ForFile(TxtFileName.Text, PnlTorrent.Visibility == Visibility.Visible);
+
+        TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
+        IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
     }
 
     private void TxtFileName_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (!_loading) _userEditedFileName = true;
-        TxtFileTitle.Text = string.IsNullOrWhiteSpace(TxtFileName.Text) ? "—" : TxtFileName.Text;
-        IcoFile.Text = Icons.ForFile(TxtFileName.Text, PnlTorrent.Visibility == Visibility.Visible);
-        UpdateOptionAvailability();
+        _fileName = TxtFileName.Text.Trim();
+        TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
+        IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
     }
 
     private async void TxtUrl_TextChanged(object sender, TextChangedEventArgs e)
@@ -155,56 +158,18 @@ public partial class NewDownloadWindow : Window
         await ProbeAsync();
     }
 
-    private void UpdateTorrentPanel(string url) =>
-        PnlTorrent.Visibility = UrlHelper.IsMagnet(url) || UrlHelper.IsTorrentFileUrl(url)
-            ? Visibility.Visible : Visibility.Collapsed;
-
-    /// <summary>Uygulanamayacak secenekler pasif kalir; sessizce yok sayilan kutu olmaz.</summary>
-    private void UpdateOptionAvailability()
-    {
-        var name = TxtFileName.Text.Trim();
-        var ext = Path.GetExtension(name);
-        var isTorrentSource = PnlTorrent.Visibility == Visibility.Visible;
-
-        var archiverExists = Archivers.AnyAvailable();
-        var canExtract = !isTorrentSource && Archivers.IsArchive(name) && archiverExists;
-        ChkExtract.IsEnabled = canExtract;
-        if (!canExtract) ChkExtract.IsChecked = false;
-
-        if (!isTorrentSource && Archivers.IsArchive(name) && !archiverExists)
-        {
-            TxtArchiverHint.Text = "Kurulu bir arşivci bulunamadı. 7-Zip, NanaZip veya WinRAR kurun.";
-            TxtArchiverHint.Visibility = Visibility.Visible;
-        }
-        else TxtArchiverHint.Visibility = Visibility.Collapsed;
-
-        var canRun = !isTorrentSource && RunnableExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
-        ChkRunAdmin.IsEnabled = canRun;
-        if (!canRun) ChkRunAdmin.IsChecked = false;
-
-        if (canExtract && _cfg.ExtractArchivesDefault && !_userTouchedExtract)
-            ChkExtract.IsChecked = true;
-    }
-
-    private void ChkExtract_Changed(object sender, RoutedEventArgs e)
-    {
-        _userTouchedExtract = true;
-        ChkDeleteArchive.IsEnabled = ChkExtract.IsChecked == true;
-        if (ChkExtract.IsChecked != true) ChkDeleteArchive.IsChecked = false;
-    }
-
-    private void ChkRunAdmin_Changed(object sender, RoutedEventArgs e) =>
-        PnlAdminWarn.Visibility = ChkRunAdmin.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-
     private void BtnBrowse_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new Microsoft.Win32.OpenFolderDialog
         {
             Title = "Kayıt klasörü seç",
-            InitialDirectory = Directory.Exists(CmbFolder.Text) ? CmbFolder.Text : _cfg.DownloadDir,
+            InitialDirectory = Directory.Exists(_folder) ? _folder : _cfg.DownloadDir,
         };
         if (dlg.ShowDialog(this) == true)
-            CmbFolder.Text = dlg.FolderName;
+        {
+            _folder = dlg.FolderName;
+            TxtFolder.Text = _folder;
+        }
     }
 
     // ──────────── Kuyruga ekleme ────────────
@@ -219,9 +184,6 @@ public partial class NewDownloadWindow : Window
     {
         var url = TxtUrl.Text.Trim();
         if (!UrlHelper.IsSupportedScheme(url)) { Warn("Geçerli bir indirme adresi girin."); return; }
-
-        var folder = CmbFolder.Text.Trim();
-        if (string.IsNullOrWhiteSpace(folder)) { Warn("Bir kayıt klasörü seçin."); return; }
 
         if (!_cfg.IsConfigured)
         {
@@ -238,27 +200,27 @@ public partial class NewDownloadWindow : Window
             return;
         }
 
+        // Indirme sonrasi davranis artik bu pencerede degil, Ayarlar'da bir kez
+        // seciliyor. Arsiv cikarma yalnizca gercekten arsivse ve bir arsivci varsa.
+        var extract = _cfg.ExtractArchivesDefault && !_isTorrentSource
+                      && Archivers.IsArchive(_fileName) && Archivers.AnyAvailable();
+
         var req = new DownloadRequest
         {
             Url = url,
-            FileName = TxtFileName.Text.Trim(),
-            TargetDir = folder,
-            Connections = CmbConnections.SelectedIndex >= 0 ? CmbConnections.SelectedIndex + 1 : 8,
-            SpeedLimitBytes = ParseSpeedLimitBytes(),
+            FileName = _fileName,
+            TargetDir = _folder,
+            Connections = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16),
+            SpeedLimitBytes = 0,
             StartPaused = paused,
-            Extract = ChkExtract.IsChecked == true,
-            DeleteArchiveAfterExtract = ChkDeleteArchive.IsChecked == true,
-            RunAsAdmin = ChkRunAdmin.IsChecked == true,
-            OpenFolder = ChkOpenFolder.IsChecked == true,
+            Extract = extract,
+            OpenFolder = _cfg.OpenFolderAfterDownloadDefault,
             Referrer = _referrer,
             Cookie = _cookie,
             UserAgent = _userAgent,
         };
 
-        if (PnlTorrent.Visibility == Visibility.Visible
-            && double.TryParse(TxtSeedRatio.Text.Trim(), NumberStyles.Float,
-                               CultureInfo.InvariantCulture, out var ratio))
-            req.SeedRatio = ratio;
+        if (_isTorrentSource) req.SeedRatio = _cfg.SeedRatio;
 
         try
         {
@@ -266,7 +228,7 @@ public partial class NewDownloadWindow : Window
             using var client = new Aria2Client(_cfg);
             var gid = await DownloadService.EnqueueAsync(client, _cfg, req);
 
-            var pickFiles = PnlTorrent.Visibility == Visibility.Visible && ChkPickFiles.IsChecked == true;
+            var pickFiles = _isTorrentSource && ChkPickFiles.IsChecked == true;
 
             // Ilerleme penceresi diyalogdan ONCE acilir: bu surecin son penceresi
             // kapaninca uygulama sonlaniyor, once yenisini acmazsak sureç olur ve
@@ -283,9 +245,6 @@ public partial class NewDownloadWindow : Window
             Warn("İndirme başlatılamadı: " + ex.Message);
         }
     }
-
-    private long ParseSpeedLimitBytes() =>
-        long.TryParse(TxtSpeedLimit.Text.Trim(), out var kb) && kb > 0 ? kb * 1024 : 0;
 
     private void SetBusy(bool busy, string status)
     {

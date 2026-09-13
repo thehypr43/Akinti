@@ -1,0 +1,67 @@
+﻿using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+
+namespace Akinti.Ui;
+
+/// <summary>
+/// Pencerenin cercevesi: Windows 11'in yuvarlatilmis koseleri ve ince kenar
+/// cizgisi. Bunlar DWM'in isi; WPF tarafindan cizilemiyor, cunku kose yuvarlatma
+/// pencerenin kendi bolgesine uygulaniyor.
+///
+/// WindowStyle=None kullanan pencerelerde de calisir: WPF cerceveyi gizlese de
+/// pencere hala normal bir Win32 penceresi.
+/// </summary>
+public static class WindowEffects
+{
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+    private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    private const int DWMWA_BORDER_COLOR = 34;
+
+    private const int DWMWCP_ROUND = 2;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    /// <summary>Pencere olusturulurken cagrilir; tutamac hazir olunca uygulanir.</summary>
+    public static void Attach(Window window)
+    {
+        window.SourceInitialized += (_, _) => Apply(window);
+    }
+
+    public static void Apply(Window window)
+    {
+        var hwnd = new WindowInteropHelper(window).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        try
+        {
+            var round = DWMWCP_ROUND;
+            var hr = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
+            if (hr != 0) Log.Warn($"Kose yuvarlatma uygulanamadi (hr=0x{hr:X8})");
+
+            var dark = ThemeManager.IsLight ? 0 : 1;
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
+
+            var border = ToColorRef(window.TryFindResource("B.Neutral700") as SolidColorBrush,
+                                    ThemeManager.IsLight ? 0x00C8C8C8 : 0x00454545);
+            DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref border, sizeof(int));
+        }
+        catch (Exception ex)
+        {
+            // Eski bir Windows surumunde bu oznitelikler yok; pencere koseli kalir,
+            // uygulama calismaya devam eder.
+            Log.Warn("Pencere cercevesi ayarlanamadi: " + ex.Message);
+        }
+    }
+
+    /// <summary>DWM COLORREF bekliyor: 0x00BBGGRR. Firca saydamsa duz bir ton kullanilir.</summary>
+    private static int ToColorRef(SolidColorBrush? brush, int fallback)
+    {
+        if (brush is null) return fallback;
+        var c = brush.Color;
+        if (c.A < 200) return fallback;
+        return c.R | (c.G << 8) | (c.B << 16);
+    }
+}

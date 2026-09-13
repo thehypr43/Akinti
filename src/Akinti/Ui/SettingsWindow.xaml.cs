@@ -60,7 +60,6 @@ public partial class SettingsWindow : Window
         TxtSeedTime.Text = _cfg.SeedTimeMinutes.ToString();
         ChkDht.IsChecked = _cfg.EnableDht;
 
-        ChkExtractDefault.IsChecked = _cfg.ExtractArchivesDefault;
         ChkOpenFolderDefault.IsChecked = _cfg.OpenFolderAfterDownloadDefault;
         ChkAutoStart.IsChecked = IsScheduledTaskEnabled();
 
@@ -108,7 +107,6 @@ public partial class SettingsWindow : Window
         _cfg.SeedRatio = ratio;
         _cfg.SeedTimeMinutes = seedTime;
         _cfg.EnableDht = ChkDht.IsChecked == true;
-        _cfg.ExtractArchivesDefault = ChkExtractDefault.IsChecked == true;
         _cfg.OpenFolderAfterDownloadDefault = ChkOpenFolderDefault.IsChecked == true;
         _cfg.ExtraAria2Args = TxtExtraArgs.Text
             .Split('\n', StringSplitOptions.RemoveEmptyEntries)

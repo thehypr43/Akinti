@@ -8,12 +8,15 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 
 - **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
 - **Her şey indirme klasörüne.** Türe göre otomatik alt klasörleme yok; klasörü istersen indirme penceresinden tek tek değiştirirsin.
-- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. İndirme penceresinde işaretle ya da bitince "Klasöre çıkar" de. Arşiv şifreliyse şifre sorulur.
-- **Yönetici olarak çalıştır.** Kurulum dosyaları için, indirme **bittikten sonra** sonuç penceresindeki düğmeden. UAC onayı Windows tarafından sorulur.
+- **Arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre. Arşiv şifreliyse şifre sorulur.
+- **Yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
 
-İkisi de **yalnızca uygun uzantılarda** görünür: çıkarma bir arşivse (ve kurulu bir arşivci varsa), yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise.
+İkisi de **indirme bittikten sonra**, sonuç penceresindeki düğmelerde ve yalnızca
+dosya türü izin veriyorsa: çıkarma bir arşivse (ve kurulu bir arşivci varsa),
+yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise.
 
-"Yönetici olarak çalıştır" indirme penceresinde bilerek **yok**: daha eline geçmemiş bir dosya için peşinen yetki vermek doğru değil. O düğme, dosya inip görüldükten sonra çıkıyor.
+İndirme penceresinde bunların hiçbiri **yok**: henüz inmemiş bir dosya hakkında
+peşinen karar vermek için sorulan onay kutuları, cevaplanması anlamsız sorular.
 - **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli, torrent içinden dosya seçebilirsin.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
@@ -179,5 +182,6 @@ set AKINTI_THEME=light
 | Pencere | Ne zaman |
 |---|---|
 | Bağlantı yakalandı | Sağ tık ya da Chrome'dan devralınan indirme. Dosya, kayıt klasörü, iki düğme — başka hiçbir şey. |
+| Arşiv şifreli | Şifreli bir arşiv çıkarılırken. Şifre hiçbir yere kaydedilmez. |
 | İndiriliyor | "İndir"e basınca diyaloğun yerine ekranın ortasında açılır. Kapatmak indirmeyi durdurmaz. |
 | İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Sen kapatana kadar durur. Düğmeler: Klasör, Klasöre çıkar, Yönetici aç, Aç — ortadaki ikisi dosya türü izin veriyorsa. |

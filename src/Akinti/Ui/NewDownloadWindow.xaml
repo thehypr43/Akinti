@@ -61,14 +61,6 @@
             </Grid>
         </Border>
 
-        <!-- ═══ İndirme bitince (yalnızca arşivlerde görünür) ═══ -->
-        <StackPanel x:Name="PnlPost" Margin="2,12,0,0">
-            <CheckBox x:Name="ChkExtract" Content="Klasöre çıkar" Visibility="Collapsed"
-                      Checked="ChkExtract_Changed" Unchecked="ChkExtract_Changed" />
-            <CheckBox x:Name="ChkDeleteArchive" Content="Çıkardıktan sonra arşivi sil"
-                      Margin="26,6,0,0" Visibility="Collapsed" />
-        </StackPanel>
-
         <!-- ═══ Torrent ═══ -->
         <CheckBox x:Name="ChkPickFiles" Content="Bilgiler gelince indirilecek dosyaları seç"
                   IsChecked="True" Margin="2,12,0,0" Visibility="Collapsed" />

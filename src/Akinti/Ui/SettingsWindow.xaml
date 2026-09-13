@@ -141,8 +141,6 @@
                         <TextBlock Text="DAVRANIŞ" Style="{StaticResource T.Kicker}" Margin="0,0,0,8" />
                         <CheckBox x:Name="ChkAutoStart"
                                   Content="Windows açılışında indirme motorunu başlat" />
-                        <CheckBox x:Name="ChkExtractDefault"
-                                  Content="Arşivlerde çıkar kutusu varsayılan olarak işaretli gelsin" />
                         <CheckBox x:Name="ChkOpenFolderDefault"
                                   Content="İndirme bitince klasörü aç" />
 

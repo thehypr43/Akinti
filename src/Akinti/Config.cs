@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Akinti;
@@ -48,7 +48,6 @@ public sealed class Config
     public bool QuickDownloadNoPrompt { get; set; }
 
     public bool OpenFolderAfterDownloadDefault { get; set; }
-    public bool ExtractArchivesDefault { get; set; }
 
     /// <summary>Guc kullanici kacis kapisi. Dogrudan aria2c komut satirina eklenir.</summary>
     public List<string> ExtraAria2Args { get; set; } = new();

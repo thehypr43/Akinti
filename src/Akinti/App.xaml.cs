@@ -1,7 +1,7 @@
 using System.Windows;
-using HafifDM.Ui;
+using Akinti.Ui;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// Tek exe, cok mod. Hangi modda calisildigi argumanlardan anlasilir:

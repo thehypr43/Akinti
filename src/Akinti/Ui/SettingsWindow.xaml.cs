@@ -5,11 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace HafifDM.Ui;
+namespace Akinti.Ui;
 
 public partial class SettingsWindow : Window
 {
-    private const string TaskName = "HafifDM Engine";
+    private const string TaskName = "Akıntı Motoru";
     private readonly Config _cfg;
 
     public SettingsWindow(Config cfg)
@@ -173,7 +173,7 @@ public partial class SettingsWindow : Window
             Aria2Engine.WriteConfFile(_cfg);
             TxtStatus.Text = await Aria2Engine.EnsureRunningAsync(_cfg)
                 ? "Motor calisiyor."
-                : "Motor baslatilamadi, hafifdm.log dosyasina bak.";
+                : "Motor baslatilamadi, akinti.log dosyasina bak.";
         }
         catch (Exception ex)
         {

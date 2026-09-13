@@ -5,7 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace HafifDM.Ui;
+namespace Akinti.Ui;
 
 public partial class MainWindow : Window
 {
@@ -84,7 +84,7 @@ public partial class MainWindow : Window
         TxtStatusLeft.Text = "Motor başlatılıyor…";
         if (!await Aria2Engine.EnsureRunningAsync(_cfg))
         {
-            TxtStatusLeft.Text = "Motor başlatılamadı — hafifdm.log dosyasına bakın.";
+            TxtStatusLeft.Text = "Motor başlatılamadı — akinti.log dosyasına bakın.";
             LoadHistoryOnly();
             return;
         }

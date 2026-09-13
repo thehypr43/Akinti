@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// Diyalogda secilen indirme-sonrasi aksiyonlar. aria2'ye verilemedigi icin
@@ -51,7 +51,7 @@ public static class JsonStore
     /// <summary>Dosyayi mutex altinda okur, degistirir, atomik yazar.</summary>
     public static void Mutate<T>(string path, Action<List<T>> change)
     {
-        using var mutex = new Mutex(false, @"Local\HafifDM.Store." + Path.GetFileName(path));
+        using var mutex = new Mutex(false, @"Local\Akinti.Store." + Path.GetFileName(path));
         var owned = false;
         try
         {
@@ -83,7 +83,7 @@ public static class JsonStore
 
     public static List<T> Read<T>(string path)
     {
-        using var mutex = new Mutex(false, @"Local\HafifDM.Store." + Path.GetFileName(path));
+        using var mutex = new Mutex(false, @"Local\Akinti.Store." + Path.GetFileName(path));
         var owned = false;
         try
         {

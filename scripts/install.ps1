@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    HafifDM kurulumu. Yonetici gerektirmez (guvenlik duvari kurali haric, o atlanabilir).
+    Akıntı kurulumu. Yonetici gerektirmez (guvenlik duvari kurali haric, o atlanabilir).
 
 .DESCRIPTION
     Sirasiyla:
-      1. Uygulamayi %LOCALAPPDATA%\Programs\HafifDM altina kopyalar
+      1. Uygulamayi %LOCALAPPDATA%\Programs\Akinti altina kopyalar
       2. aria2 RPC icin RASTGELE port + RASTGELE 32 baytlik parola uretir
       3. config.json yazar ve dosyanin erisimini sadece bu kullaniciya kisitlar
       4. aria2.conf uretir (uygulamanin kendisine urettirir, tek kaynak)
@@ -30,11 +30,11 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $RepoRoot   = Split-Path -Parent $PSScriptRoot
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\HafifDM'
-$DataDir    = Join-Path $env:APPDATA 'HafifDM'
+$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Akinti'
+$DataDir    = Join-Path $env:APPDATA 'Akinti'
 $ExtDir     = Join-Path $InstallDir 'extension'
-$TaskName   = 'HafifDM Engine'
-$HostName   = 'com.hafifdm.host'
+$TaskName   = 'Akıntı Motoru'
+$HostName   = 'com.akinti.host'
 
 function Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 function Ok($msg)   { Write-Host "    $msg" -ForegroundColor DarkGray }
@@ -46,7 +46,7 @@ if (-not $SkipBuild) {
     if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
         throw ".NET SDK bulunamadi. Once kur:  winget install Microsoft.DotNet.SDK.10"
     }
-    $proj = Join-Path $RepoRoot 'src\HafifDM\HafifDM.csproj'
+    $proj = Join-Path $RepoRoot 'src\Akinti\Akinti.csproj'
     $pub  = Join-Path $RepoRoot 'publish'
     dotnet publish $proj -c Release -o $pub --nologo
     if ($LASTEXITCODE -ne 0) { throw "Derleme basarisiz." }
@@ -65,7 +65,7 @@ New-Item -ItemType Directory -Force -Path $InstallDir, $DataDir, (Join-Path $Ins
 
 # Motor calisiyorsa exe'ler kilitli olur; once durdur.
 Get-Process aria2c -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Get-Process HafifDM -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process Akinti -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Milliseconds 400
 
 Copy-Item -Path (Join-Path $pub '*') -Destination $InstallDir -Recurse -Force
@@ -74,9 +74,9 @@ Copy-Item -Path $aria2 -Destination (Join-Path $InstallDir 'tools\aria2c.exe') -
 New-Item -ItemType Directory -Force -Path $ExtDir | Out-Null
 Copy-Item -Path (Join-Path $RepoRoot 'extension\chrome\*') -Destination $ExtDir -Recurse -Force
 
-$ExePath = Join-Path $InstallDir 'HafifDM.exe'
-if (-not (Test-Path $ExePath)) { throw "HafifDM.exe kopyalanamadi." }
-Ok "HafifDM.exe hazir"
+$ExePath = Join-Path $InstallDir 'Akinti.exe'
+if (-not (Test-Path $ExePath)) { throw "Akinti.exe kopyalanamadi." }
+Ok "Akinti.exe hazir"
 
 # ---------------------------------------------------------------- 2. Port + parola
 Step 'RPC portu ve parolasi uretiliyor'
@@ -149,7 +149,7 @@ Step 'aria2.conf uretiliyor'
 & $ExePath --write-conf | Out-Null
 Start-Sleep -Milliseconds 600
 $ConfPath = Join-Path $DataDir 'aria2.conf'
-if (-not (Test-Path $ConfPath)) { throw "aria2.conf uretilemedi. $DataDir\hafifdm.log dosyasina bak." }
+if (-not (Test-Path $ConfPath)) { throw "aria2.conf uretilemedi. $DataDir\akinti.log dosyasina bak." }
 Ok $ConfPath
 
 # ---------------------------------------------------------------- 5. Gizli baslatici
@@ -160,7 +160,7 @@ $Aria2Exe = Join-Path $InstallDir 'tools\aria2c.exe'
 # WScript.Shell.Run(..., 0, False): pencere gostermez, beklemez.
 # wscript.exe hemen cikar, geriye sadece aria2c.exe kalir.
 @"
-' HafifDM - motoru konsol penceresi gostermeden baslatir.
+' Akıntı - motoru konsol penceresi göstermeden başlatır.
 ' Bu dosya scripts\install.ps1 tarafindan uretildi.
 Dim sh
 Set sh = CreateObject("WScript.Shell")
@@ -181,7 +181,7 @@ $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" 
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
                        -Settings $settings -Principal $principal -Force `
-                       -Description 'HafifDM indirme motorunu (aria2c) arka planda baslatir.' | Out-Null
+                       -Description 'Akıntı indirme motorunu (aria2c) arka planda başlatır.' | Out-Null
 Ok "Gorev: $TaskName (oturum acilisinda, 30 sn gecikmeli, gizli)"
 
 # ---------------------------------------------------------------- 7. Chrome native messaging
@@ -213,7 +213,7 @@ if (-not $ExtensionId) {
 
 $manifest = [ordered]@{
     name            = $HostName
-    description     = 'HafifDM indirme koprusu'
+    description     = 'Akıntı indirme köprüsü'
     path            = $ExePath
     type            = 'stdio'
     # SADECE bu eklenti bu host ile konusabilir.
@@ -234,8 +234,8 @@ $winPrincipal  = New-Object System.Security.Principal.WindowsPrincipal($identity
 $isAdmin       = $winPrincipal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if ($isAdmin) {
-    Remove-NetFirewallRule -DisplayName 'HafifDM aria2 (gelen engelle)' -ErrorAction SilentlyContinue
-    New-NetFirewallRule -DisplayName 'HafifDM aria2 (gelen engelle)' -Direction Inbound `
+    Remove-NetFirewallRule -DisplayName 'Akıntı aria2 (gelen engelle)' -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName 'Akıntı aria2 (gelen engelle)' -Direction Inbound `
                         -Program $Aria2Exe -Action Block -Profile Any -RemoteAddress Any `
                         -ErrorAction SilentlyContinue | Out-Null
     Ok 'aria2c icin gelen baglantilar engellendi'
@@ -252,7 +252,7 @@ Start-Sleep -Seconds 2
 if (Get-Process aria2c -ErrorAction SilentlyContinue) {
     Ok 'aria2c.exe calisiyor (Gorev Yoneticisi > Ayrintilar altinda gorunur)'
 } else {
-    Warn2 "aria2c baslamadi. $DataDir\hafifdm.log dosyasina bak."
+    Warn2 "aria2c baslamadi. $DataDir\akinti.log dosyasina bak."
 }
 
 # ---------------------------------------------------------------- Ozet
@@ -272,5 +272,5 @@ Write-Host ''
 Write-Host 'Kontrol:' -ForegroundColor White
 Write-Host "  Uygulama : $ExePath"
 Write-Host "  Ayarlar  : $ConfigFile"
-Write-Host "  Gunluk   : $(Join-Path $DataDir 'hafifdm.log')"
+Write-Host "  Gunluk   : $(Join-Path $DataDir 'akinti.log')"
 Write-Host "  RPC portu: $port  (sadece 127.0.0.1, parola korumali)"

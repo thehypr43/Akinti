@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 
-namespace HafifDM.Ui;
+namespace Akinti.Ui;
 
 public sealed class TorrentFileRow : INotifyPropertyChanged
 {

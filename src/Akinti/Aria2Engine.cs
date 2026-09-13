@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// aria2c.exe surecinin yonetimi: conf dosyasi uretimi, gizli baslatma, saglik bekleme.
@@ -22,7 +22,7 @@ public static class Aria2Engine
 
         void Set(string k, object v) => sb.Append(k).Append('=').Append(v).Append('\n');
 
-        sb.Append("# HafifDM tarafindan uretildi. Elle yapilan degisiklikler\n");
+        sb.Append("# Akinti tarafindan uretildi. Elle yapilan degisiklikler\n");
         sb.Append("# ayarlar kaydedilince silinir. Kalici ek ayar icin\n");
         sb.Append("# config.json icindeki ExtraAria2Args alanini kullan.\n\n");
 
@@ -75,7 +75,7 @@ public static class Aria2Engine
 
         // --- Indirme sonrasi kanca ---
         // Ucu de ayni exe'yi cagirir; hangi olayin dustugunu exe tellStatus ile ogrenir.
-        // HafifDM.exe GUI-subsystem oldugu icin konsol penceresi acilmaz.
+        // Akinti.exe GUI-subsystem oldugu icin konsol penceresi acilmaz.
         Set("on-download-complete", AppPaths.ExePath);
         Set("on-bt-download-complete", AppPaths.ExePath);
         Set("on-download-error", AppPaths.ExePath);

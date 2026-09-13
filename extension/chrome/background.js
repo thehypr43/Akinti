@@ -1,4 +1,4 @@
-// HafifDM Chrome eklentisi
+// Akinti Chrome eklentisi
 //
 // BU DOSYANIN YAPMADIKLARI - bilerek ve kalici olarak:
 //   * chrome.downloads YOK        -> tarayicinin kendi indirmelerine dokunulmaz
@@ -12,14 +12,14 @@
 // uygulamasina yollamak. Bir web sitesi senin adina sag tik menusu tiklayamaz,
 // dolayisiyla bu yoldan habersiz indirme baslatilamaz.
 
-const HOST = "com.hafifdm.host";
+const HOST = "com.akinti.host";
 
 const MENUS = [
-  { id: "hafifdm-link",  title: "HafifDM ile indir",          contexts: ["link"] },
-  { id: "hafifdm-image", title: "Resmi HafifDM ile indir",    contexts: ["image"] },
-  { id: "hafifdm-media", title: "Medyayi HafifDM ile indir",  contexts: ["video", "audio"] },
-  { id: "hafifdm-sel",   title: "Secili adresi HafifDM ile indir", contexts: ["selection"] },
-  { id: "hafifdm-page",  title: "Bu sayfayi HafifDM ile indir",    contexts: ["page"] },
+  { id: "akinti-link",  title: "Akıntı ile indir",          contexts: ["link"] },
+  { id: "akinti-image", title: "Resmi Akıntı ile indir",    contexts: ["image"] },
+  { id: "akinti-media", title: "Medyayı Akıntı ile indir",  contexts: ["video", "audio"] },
+  { id: "akinti-sel",   title: "Seçili adresi Akıntı ile indir", contexts: ["selection"] },
+  { id: "akinti-page",  title: "Bu sayfayı Akıntı ile indir",    contexts: ["page"] },
 ];
 
 function buildMenus() {
@@ -40,18 +40,18 @@ chrome.contextMenus.onClicked.addListener((info) => {
   // uygulamasinin diyalogunda, kullanicinin kendi eliyle secilir.
   chrome.runtime.sendNativeMessage(HOST, { url }, () => {
     if (chrome.runtime.lastError) {
-      console.warn("HafifDM baglanti hatasi:", chrome.runtime.lastError.message);
+      console.warn("Akıntı bağlantı hatası:", chrome.runtime.lastError.message);
     }
   });
 });
 
 function pickUrl(info) {
   switch (info.menuItemId) {
-    case "hafifdm-link":  return valid(info.linkUrl);
-    case "hafifdm-image":
-    case "hafifdm-media": return valid(info.srcUrl);
-    case "hafifdm-page":  return valid(info.pageUrl);
-    case "hafifdm-sel":   return valid(extractUrl(info.selectionText));
+    case "akinti-link":  return valid(info.linkUrl);
+    case "akinti-image":
+    case "akinti-media": return valid(info.srcUrl);
+    case "akinti-page":  return valid(info.pageUrl);
+    case "akinti-sel":   return valid(extractUrl(info.selectionText));
     default: return null;
   }
 }

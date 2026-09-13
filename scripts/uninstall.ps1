@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    HafifDM'i kaldirir.
+    Akıntı'yı kaldırır.
 
 .PARAMETER KeepData
-    Ayarlari ve indirme gecmisini (%APPDATA%\HafifDM) silme.
+    Ayarlari ve indirme gecmisini (%APPDATA%\Akinti) silme.
 
 .NOTES
     Indirilen dosyalara hicbir sekilde dokunulmaz.
@@ -13,16 +13,16 @@ param([switch]$KeepData)
 
 $ErrorActionPreference = 'Continue'
 
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\HafifDM'
-$DataDir    = Join-Path $env:APPDATA 'HafifDM'
-$TaskName   = 'HafifDM Engine'
-$HostName   = 'com.hafifdm.host'
+$InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Akinti'
+$DataDir    = Join-Path $env:APPDATA 'Akinti'
+$TaskName   = 'Akıntı Motoru'
+$HostName   = 'com.akinti.host'
 
 function Step($m) { Write-Host "==> $m" -ForegroundColor Cyan }
 
 Step 'Motor durduruluyor'
 Get-Process aria2c  -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Get-Process HafifDM -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process Akinti -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 
 Step 'Zamanlanmis gorev siliniyor'
 Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
@@ -32,7 +32,7 @@ Remove-Item -Path "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$HostName" 
             -Recurse -Force -ErrorAction SilentlyContinue
 
 Step 'Guvenlik duvari kurali siliniyor'
-Remove-NetFirewallRule -DisplayName 'HafifDM aria2 (gelen engelle)' -ErrorAction SilentlyContinue
+Remove-NetFirewallRule -DisplayName 'Akıntı aria2 (gelen engelle)' -ErrorAction SilentlyContinue
 
 Step 'Program dosyalari siliniyor'
 Start-Sleep -Milliseconds 500

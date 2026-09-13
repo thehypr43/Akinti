@@ -10,7 +10,7 @@ Add-Type -AssemblyName System.Drawing
 
 $root     = Split-Path -Parent $PSScriptRoot
 $iconsDir = Join-Path $root 'extension\chrome\icons'
-$appDir   = Join-Path $root 'src\HafifDM'
+$appDir   = Join-Path $root 'src\Akinti'
 New-Item -ItemType Directory -Force -Path $iconsDir | Out-Null
 
 function New-Icon([int]$size) {
@@ -72,7 +72,7 @@ foreach ($s in $sizes) {
     $ms.Dispose(); $bmp.Dispose()
 }
 
-$icoPath = Join-Path $appDir 'hafifdm.ico'
+$icoPath = Join-Path $appDir 'akinti.ico'
 $fs = [System.IO.File]::Create($icoPath)
 $bw = New-Object System.IO.BinaryWriter($fs)
 $bw.Write([UInt16]0); $bw.Write([UInt16]1); $bw.Write([UInt16]$sizes.Count)

@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
-/// %APPDATA%\HafifDM\config.json. RPC parolasini tuttugu icin dosyanin ACL'i
+/// %APPDATA%\Akinti\config.json. RPC parolasini tuttugu icin dosyanin ACL'i
 /// kuruluma ait kullaniciya kisitlidir (bkz. scripts\install.ps1).
 /// </summary>
 public sealed class Config

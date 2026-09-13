@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// Chrome native messaging host.
@@ -69,11 +69,14 @@ public static class NativeHost
         try
         {
             // Diyalogu ayri bir surecte ac ve cik. Kalici bir kopru birakmiyoruz.
+            //
+            // UseShellExecute = true SART: false olsaydi diyalog, bu surecin Chrome'a
+            // bagli stdin/stdout taniticilarini miras alirdi ve host cikse bile boru
+            // acik kalirdi. ShellExecuteEx tanitici mirasi yapmaz.
             var psi = new ProcessStartInfo
             {
                 FileName = AppPaths.ExePath,
-                UseShellExecute = false,
-                CreateNoWindow = true,
+                UseShellExecute = true,
             };
             psi.ArgumentList.Add("--new");
             psi.ArgumentList.Add(url!);

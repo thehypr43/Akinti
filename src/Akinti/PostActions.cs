@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// aria2'nin indirme-sonrasi kancasi. Uc olay (complete / bt-complete / error) ayni

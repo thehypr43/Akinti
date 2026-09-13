@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace HafifDM.Ui;
+namespace Akinti.Ui;
 
 /// <summary>
 /// Her indirmenin goz onunde onaylandigi yer. Eklentiden gelen mesaj sadece adresi
@@ -246,7 +246,7 @@ public partial class NewDownloadWindow : Window
         if (!await Aria2Engine.EnsureRunningAsync(_cfg))
         {
             SetBusy(false, "");
-            Warn("İndirme motoru başlatılamadı. Ayrıntı için hafifdm.log dosyasına bakın.");
+            Warn("İndirme motoru başlatılamadı. Ayrıntı için akinti.log dosyasına bakın.");
             return;
         }
 

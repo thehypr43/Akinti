@@ -1,4 +1,4 @@
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>
 /// Tek dosyaya yazan minimal log. Hook ve native-host modlarinda pencere olmadigi

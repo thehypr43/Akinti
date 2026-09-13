@@ -1,6 +1,6 @@
 using System.Net.Http;
 
-namespace HafifDM;
+namespace Akinti;
 
 /// <summary>Indirme diyalogunda kullanicinin isaretledigi secenekler.</summary>
 public sealed class DownloadRequest
@@ -105,7 +105,7 @@ public static class DownloadService
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 HafifDM/1.0");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 Akinti/1.0");
             var bytes = await http.GetByteArrayAsync(url, ct).ConfigureAwait(false);
             // 10 MB ustu bir .torrent gercek degildir; RPC'ye base64 olarak sismesin.
             return bytes.Length is > 0 and < 10 * 1024 * 1024 ? bytes : null;

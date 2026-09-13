@@ -2,7 +2,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
-namespace HafifDM;
+namespace Akinti;
 
 public enum Aria2Status { Unknown, Active, Waiting, Paused, Error, Complete, Removed }
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "HafifDM",
+  "name": "Akıntı",
   "version": "1.0.0",
-  "description": "Sag tik menusunden HafifDM ile indir. Sayfalara hicbir sekilde dokunmaz.",
+  "description": "Sağ tık menüsünden Akıntı ile indir. Sayfalara hiçbir şekilde dokunmaz.",
 
   "permissions": ["contextMenus", "nativeMessaging"],
 

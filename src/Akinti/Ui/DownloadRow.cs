@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
 
-namespace HafifDM.Ui;
+namespace Akinti.Ui;
 
 public enum RowState { Active, Waiting, Paused, Completed, Failed, Cancelled }
 

@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 
-namespace HafifDM;
+namespace Akinti;
 
 public static class UrlHelper
 {
@@ -104,7 +104,7 @@ public static class RemoteProbe
         {
             using var handler = new HttpClientHandler { AllowAutoRedirect = true, MaxAutomaticRedirections = 10 };
             using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 HafifDM/1.0");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 Akinti/1.0");
 
             using var req = new HttpRequestMessage(HttpMethod.Head, url);
             using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)

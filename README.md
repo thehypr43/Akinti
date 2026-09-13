@@ -1,4 +1,4 @@
-# HafifDM
+# Akinti
 
 Windows için hafif indirme yöneticisi. Tray ikonu yok, tarayıcıda gezerken önüne çıkan "indir" butonu yok, panoyu dinlemez.
 
@@ -6,7 +6,7 @@ Arka planda sadece **tek bir küçük süreç** durur: `aria2c.exe` (~10-15 MB).
 
 ## Ne yapar
 
-- **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "HafifDM ile indir" de. Başka hiçbir yerde karşına çıkmaz.
+- **Sağ tık menüsünden indirme.** Chrome'da bir bağlantıya sağ tıkla, "Akıntı ile indir" de. Başka hiçbir yerde karşına çıkmaz.
 - **Dosya türüne göre klasörleme.** `.zip` Arşivler'e, `.mp4` Video'ya, `.exe` Programlar'a. Kurallar ayarlardan düzenlenir.
 - **İndirince arşivi çıkar.** 7-Zip, NanaZip veya WinRAR ile, arşiv adını taşıyan bir alt klasöre.
 - **İndirince yönetici olarak çalıştır.** Kurulum dosyaları için. UAC onayı Windows tarafından sorulur.
@@ -24,7 +24,7 @@ Bunlar tasarım kararı, ayar değil. Kapatılabilir bir şey değiller çünkü
 | `host_permissions` istemez | Hiçbir sayfanın içeriğini okuyamaz — `chrome://extensions`'da "bu site verilerinizi okuyabilir" yazmaz |
 | Panoyu dinlemez | Kopyaladığın link indirme başlatmaz |
 | Bildirim göstermez | Toast çıkmaz |
-| Protokol handler kaydetmez | Hiçbir site `hafifdm://...` ile uygulamayı tetikleyemez |
+| Protokol handler kaydetmez | Hiçbir site `akinti://...` ile uygulamayı tetikleyemez |
 
 Her indirme, senin gördüğün bir diyalogdan açık onay ister.
 
@@ -68,7 +68,7 @@ Sonra:
 pwsh -File scripts/install.ps1
 ```
 
-Script şunları yapar: derler, `%LOCALAPPDATA%\Programs\HafifDM` altına kurar, aria2c'yi indirip SHA256 doğrular, rastgele port + parola üretir, açılışta çalışan gizli bir zamanlanmış görev kurar, Chrome native messaging host'unu kaydeder.
+Script şunları yapar: derler, `%LOCALAPPDATA%\Programs\Akinti` altına kurar, aria2c'yi indirip SHA256 doğrular, rastgele port + parola üretir, açılışta çalışan gizli bir zamanlanmış görev kurar, Chrome native messaging host'unu kaydeder.
 
 Güvenlik duvarı kuralı için yönetici gerekir; yönetici değilsen o adım atlanır ve script sana söyler. Diğer her şey yönetici olmadan çalışır.
 
@@ -79,7 +79,7 @@ Script bittikten sonra tek elle adım:
 1. `chrome://extensions`
 2. Sağ üstten **Geliştirici modu**nu aç
 3. **Paketlenmemiş öğeyi yükle**
-4. `%LOCALAPPDATA%\Programs\HafifDM\extension` klasörünü seç
+4. `%LOCALAPPDATA%\Programs\Akinti\extension` klasörünü seç
 
 Chrome'un gösterdiği eklenti kimliği script'in yazdırdığından farklıysa, script'i o kimlikle bir kez daha çalıştır:
 
@@ -98,7 +98,7 @@ Ayarları ve geçmişi korumak için `-KeepData` ekle. İndirilmiş dosyalara hi
 ## Yapı
 
 ```
-src/HafifDM/          Tek WPF projesi, tek exe, argümana göre çok mod
+src/Akinti/          Tek WPF projesi, tek exe, argümana göre çok mod
   Aria2Client.cs        JSON-RPC istemcisi
   Aria2Engine.cs        aria2.conf üretimi, gizli başlatma
   Archivers.cs          7-Zip / NanaZip / WinRAR tespiti ve çağrısı
@@ -109,7 +109,7 @@ extension/chrome/     MV3 eklenti, host_permissions yok
 scripts/              install / uninstall / fetch-aria2 / make-icons
 ```
 
-`HafifDM.exe` argümanına göre davranır:
+`Akinti.exe` argümanına göre davranır:
 
 | Argüman | Mod |
 |---|---|
@@ -121,8 +121,8 @@ scripts/              install / uninstall / fetch-aria2 / make-icons
 
 ## Günlük
 
-Sorun olursa: `%APPDATA%\HafifDM\hafifdm.log`
+Sorun olursa: `%APPDATA%\Akinti\akinti.log`
 
 ## Tasarım
 
-Arayüz renkleri, tipografi ve köşe yarıçapları `src/HafifDM/Ui/Theme.xaml` içinde token olarak durur. Tasarım değişikliği pencere XAML'lerine dokunmadan oradan yapılır.
+Arayüz renkleri, tipografi ve köşe yarıçapları `src/Akinti/Ui/Theme.xaml` içinde token olarak durur. Tasarım değişikliği pencere XAML'lerine dokunmadan oradan yapılır.

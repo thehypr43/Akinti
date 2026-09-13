@@ -8,10 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
 
-    <AssemblyName>HafifDM</AssemblyName>
-    <RootNamespace>HafifDM</RootNamespace>
+    <AssemblyName>Akinti</AssemblyName>
+    <RootNamespace>Akinti</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>hafifdm.ico</ApplicationIcon>
+    <ApplicationIcon>akinti.ico</ApplicationIcon>
 
     <!-- Boyut onemsiz, acilis hizi onemli: self-contained + ReadyToRun -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -29,10 +29,10 @@
     <Using Include="System.IO" />
 
     <!-- ApplicationIcon sadece exe ikonunu ayarlar. Pencerelerdeki
-         Icon="/hafifdm.ico" bagi icin dosyanin ayrica kaynak olarak
+         Icon="/akinti.ico" bagi icin dosyanin ayrica kaynak olarak
          gomulmesi gerekiyor, yoksa her pencere acilirken XamlParseException. -->
-    <None Remove="hafifdm.ico" />
-    <Resource Include="hafifdm.ico" />
+    <None Remove="akinti.ico" />
+    <Resource Include="akinti.ico" />
   </ItemGroup>
 
 </Project>

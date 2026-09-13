@@ -239,12 +239,33 @@ function Get-LoadedExtensionIds([string[]]$dirs) {
 
                 foreach ($id in $settings.Keys) {
                     $val = $settings[$id]
-                    if ($val -isnot [hashtable] -or -not $val.ContainsKey('path')) { continue }
-                    $extPath = [string]$val['path']
-                    if (-not $extPath) { continue }
-                    foreach ($d in $dirs) {
-                        if ($extPath.TrimEnd('\') -ieq $d.TrimEnd('\')) { $found += $id }
+                    if ($val -isnot [hashtable]) { continue }
+
+                    $match = $false
+                    $extPath = ''
+
+                    if ($val.ContainsKey('path')) {
+                        $extPath = [string]$val['path']
+                        foreach ($d in $dirs) {
+                            if ($extPath -and $extPath.TrimEnd('\') -ieq $d.TrimEnd('\')) { $match = $true }
+                        }
                     }
+
+                    # Yol eslesmesi tek basina yetmiyor: eklenti bambaska bir
+                    # klasorden yuklenmis olabilir (depo, indirilenler, USB...).
+                    # Chrome, paketlenmemis eklentinin adini kaydinda tutmuyor;
+                    # o yuzden klasordeki manifest.json'a bakiyoruz. Kurulum
+                    # paketi calistirildiginda yol tutmadigi icin kimlik yanlis
+                    # tahmin ediliyor ve calisan kayit bozuluyordu.
+                    if (-not $match -and $extPath -and (Test-Path (Join-Path $extPath 'manifest.json'))) {
+                        try {
+                            $man = Get-Content (Join-Path $extPath 'manifest.json') -Raw -Encoding utf8 |
+                                   ConvertFrom-Json -AsHashtable
+                            if ($man.ContainsKey('name') -and [string]$man['name'] -eq 'Akıntı') { $match = $true }
+                        } catch { }
+                    }
+
+                    if ($match) { $found += $id }
                 }
             }
         }

@@ -126,6 +126,18 @@ Chrome'un gösterdiği eklenti kimliği script'in yazdırdığından farklıysa,
 pwsh -File scripts/install.ps1 -SkipBuild -ExtensionId <kimlik>
 ```
 
+## Başka bilgisayara kurmak
+
+```bash
+pwsh -File scripts/make-package.ps1
+```
+
+Masaüstüne `Akinti-Kurulum` klasörü çıkar: uygulama derlenmiş halde, aria2 içinde,
+eklenti yanında. Hedef makinede .NET SDK ya da internet gerekmez; `KUR.cmd`'ye çift
+tıklanır (PowerShell 7 şart), eklenti `chrome://extensions`ten yüklenir, sonra
+`KUR.cmd` bir kez daha çalıştırılır — ikinci çalıştırma Chrome'un eklentiye verdiği
+gerçek kimliği okuyup köprü iznini ona bağlar.
+
 ## Kaldırma
 
 ```bash

@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         _lastNav = NavActive;
 
         // Pencere gorunur degilken hic sorgu atilmaz; kapaliyken CPU tuketimi sifir.
-        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
+        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
         _timer.Tick += async (_, _) => await RefreshAsync();
 
         Loaded += OnLoaded;
@@ -431,13 +431,12 @@ public partial class MainWindow : Window
         else Warn("Bu kayıt bir torrent değil.");
     }
 
-    /// <summary>Torrent icindeki dosyalari yeniden secmek icin. aria2 "select-file"
-    /// secenegini indirme sirasinda da degistirebiliyor.</summary>
+    /// <summary>Torrentin kendi penceresi: tohum/es, paylasim orani ve dosya secimi.</summary>
     private void CtxTorrentFiles_Click(object sender, RoutedEventArgs e)
     {
         if (Selected is not { IsTorrent: true } row) { Warn("Bu kayıt bir torrent değil."); return; }
         if (!_cfg.IsConfigured) return;
-        new TorrentFilesWindow(_cfg, row.Gid) { Owner = this }.Show();
+        new TorrentWindow(_cfg, row.Gid) { Owner = this }.Show();
     }
 
     /// <summary>Tamamlanmis bir torrent aria2'de kaldigi surece paylasmaya devam

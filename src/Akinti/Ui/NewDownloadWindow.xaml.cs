@@ -249,13 +249,14 @@ public partial class NewDownloadWindow : Window
             using var client = new Aria2Client(_cfg);
             var gid = await DownloadService.EnqueueAsync(client, _cfg, req);
 
-            var pickFiles = _isTorrentSource && ChkPickFiles.IsChecked == true;
-
             // Ilerleme penceresi diyalogdan ONCE acilir: bu surecin son penceresi
             // kapaninca uygulama sonlaniyor, once yenisini acmazsak sureç olur ve
             // indirme baslar ama kullanici hicbir sey gormez.
-            if (!paused) new MiniWindow(_cfg, gid).Show();
-            if (pickFiles) new TorrentFilesWindow(_cfg, gid).Show();
+            //
+            // Torrent kendi penceresini aciyor: tohum/es sayisi, paylasim orani ve
+            // dosya listesi sıradan bir indirme penceresine sigmiyor.
+            if (_isTorrentSource) new TorrentWindow(_cfg, gid).Show();
+            else if (!paused) new MiniWindow(_cfg, gid).Show();
 
             Close();
         }

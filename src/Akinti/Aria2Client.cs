@@ -1,4 +1,4 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
@@ -23,6 +23,15 @@ public sealed class DownloadItem
     public string? InfoHash { get; init; }
     public string? TorrentName { get; init; }
     public int NumSeeders { get; init; }
+
+    /// <summary>Simdiye kadar yuklenen (paylasilan) bayt.</summary>
+    public long UploadLength { get; init; }
+
+    /// <summary>Torrent artik sadece paylasiyor mu (indirme bitti, seed suruyor)?</summary>
+    public bool IsSeeding { get; init; }
+
+    /// <summary>Paylasim orani: yuklenen / indirilen.</summary>
+    public double Ratio => CompletedLength > 0 ? (double)UploadLength / CompletedLength : 0;
 
     /// <summary>Su an acik olan baglanti (parca) sayisi.</summary>
     public int Connections { get; init; }
@@ -56,7 +65,7 @@ public sealed class Aria2Client : IDisposable
     [
         "gid", "status", "totalLength", "completedLength", "downloadSpeed", "uploadSpeed",
         "errorCode", "errorMessage", "dir", "files", "infoHash", "numSeeders", "bittorrent",
-        "connections"
+        "connections", "uploadLength", "seeder"
     ];
 
     private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
@@ -206,6 +215,7 @@ public sealed class Aria2Client : IDisposable
                 Index = int.TryParse(Str(f, "index"), out var i) ? i : 0,
                 Path = Str(f, "path") ?? "",
                 Length = long.TryParse(Str(f, "length"), out var l) ? l : 0,
+                CompletedLength = long.TryParse(Str(f, "completedLength"), out var c) ? c : 0,
                 Selected = Str(f, "selected") == "true",
             });
         }
@@ -330,6 +340,10 @@ public sealed class Aria2Client : IDisposable
             InfoHash = Str(el, "infoHash"),
             TorrentName = torrentName,
             NumSeeders = (int)Num(el, "numSeeders"),
+            UploadLength = Num(el, "uploadLength"),
+            // aria2 "seeder" alanini yalnizca torrentlerde veriyor: true ise
+            // indirme bitmis, surec artik sadece paylasiyor.
+            IsSeeding = string.Equals(Str(el, "seeder"), "true", StringComparison.OrdinalIgnoreCase),
             Connections = (int)Num(el, "connections"),
         };
     }
@@ -342,7 +356,10 @@ public sealed class TorrentFile
     public int Index { get; init; }
     public string Path { get; init; } = "";
     public long Length { get; init; }
+    public long CompletedLength { get; init; }
     public bool Selected { get; set; }
+
+    public double Progress => Length > 0 ? (double)CompletedLength / Length : 0;
 }
 
 public sealed class GlobalStat

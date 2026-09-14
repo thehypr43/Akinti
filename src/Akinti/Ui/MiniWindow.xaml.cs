@@ -39,7 +39,7 @@ public partial class MiniWindow : Window
         _cfg = cfg;
         _gid = gid;
 
-        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
+        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
         _timer.Tick += async (_, _) => await RefreshAsync();
 
         Loaded += OnLoaded;
@@ -83,6 +83,19 @@ public partial class MiniWindow : Window
 
     private void Apply(DownloadItem item)
     {
+        // Bir torrent bu pencereye ait degil (bittiginde durmuyor, paylasmaya
+        // devam ediyor). --mini ile bir torrent GID'i verilmisse kendi penceresine
+        // devret.
+        if (item.IsTorrent && !_finished)
+        {
+            _finished = true;
+            _timer.Stop();
+            try { new TorrentWindow(_cfg, item.Gid).Show(); }
+            catch (Exception ex) { Log.Error("Torrent penceresi acilamadi", ex); }
+            Close();
+            return;
+        }
+
         if (_firstSample)
         {
             _firstSample = false;

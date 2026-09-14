@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
@@ -69,6 +69,9 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
     public string SourceUri { get; set; } = "";
     public string? InfoHash { get; set; }
+    public bool IsSeeding { get; private set; }
+    public int Seeders { get; private set; }
+
     public bool IsTorrent { get; set; }
     public DateTime? FinishedAt { get; set; }
 
@@ -82,7 +85,7 @@ public sealed class DownloadRow : INotifyPropertyChanged
     public string IconGlyph =>
         Icons.ForFile(string.IsNullOrEmpty(FilePath) ? Name : FilePath, IsTorrent);
 
-    public string TagText => State switch
+    public string TagText => IsSeeding && State == RowState.Active ? "PAYLAŞILIYOR" : State switch
     {
         RowState.Active => "İNDİRİLİYOR",
         RowState.Waiting => "KUYRUKTA",
@@ -154,9 +157,24 @@ public sealed class DownloadRow : INotifyPropertyChanged
         }
     }
 
-    public string SpeedText => State == RowState.Active && Speed > 0 ? Format.Speed(Speed) : "";
+    /// <summary>Torrentte yukleme hizi da yazilir: paylasirken indirme hizi sifirdir
+    /// ve satir bos gorunurdu.</summary>
+    public string SpeedText
+    {
+        get
+        {
+            if (State != RowState.Active) return "";
 
-    public string EtaText => State == RowState.Active && Eta is { } e ? Format.Duration(e) + " kaldı" : "";
+            var parts = new List<string>();
+            if (Speed > 0) parts.Add("↓ " + Format.Speed(Speed));
+            if (IsTorrent && UploadSpeed > 0) parts.Add("↑ " + Format.Speed(UploadSpeed));
+            if (IsTorrent && Seeders > 0) parts.Add(Seeders + " tohum");
+            return string.Join("  ·  ", parts);
+        }
+    }
+
+    public string EtaText => State == RowState.Active && !IsSeeding && Eta is { } e
+        ? Format.Duration(e) + " kaldı" : "";
 
     public TimeSpan? Eta =>
         Speed > 0 && Total > Completed ? TimeSpan.FromSeconds((Total - Completed) / (double)Speed) : null;
@@ -229,7 +247,13 @@ public sealed class DownloadRow : INotifyPropertyChanged
         if (!string.IsNullOrEmpty(item.SourceUri)) SourceUri = item.SourceUri!;
         InfoHash = item.InfoHash;
         IsTorrent = item.IsTorrent;
-        State = FromAria2(item.Status);   // en son: tum turetilmis alanlari tazeler
+        IsSeeding = item.IsSeeding;
+        Seeders = item.NumSeeders;
+        State = FromAria2(item.Status);
+
+        // Durum degismeden de etiket degisebiliyor (indirme bitip paylasima
+        // gecmek gibi), o yuzden her turda turetilmis alanlar tazeleniyor.
+        RefreshAll();
         return this;
     }
 

@@ -17,7 +17,11 @@ yönetici olarak çalıştırma `.exe .msi .msix .bat .cmd .ps1` ise.
 
 İndirme penceresinde bunların hiçbiri **yok**: henüz inmemiş bir dosya hakkında
 peşinen karar vermek için sorulan onay kutuları, cevaplanması anlamsız sorular.
-- **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli. Bir `.torrent` dosyasına çift tıkladığında Akıntı açılır; hangi dosyaların ineceğini tek tek seçebilirsin (indirme sürerken de değiştirilebilir). Ana pencerede **Torrent** bölmesi, satır sağ tıkında dosya seçimi, magnet kopyalama ve paylaşımı durdurma var.
+- **Torrent.** Magnet ve `.torrent`, DHT/PEX destekli. Bir `.torrent` dosyasına çift tıkladığında Akıntı açılır. Torrentin **kendi penceresi** var: tohum/eş sayısı, indirme ve yükleme hızı, paylaşım oranı, paylaşılan miktar, dosya listesi ve dosya seçimi (indirme sürerken de değiştirilebilir). Ana pencerede **Torrent** bölmesi ve satır sağ tıkında aynı pencere, magnet kopyalama, paylaşımı durdurma.
+
+Bir torrent sıradan bir indirme gibi davranmıyor — bittiğinde durmuyor, paylaşmaya
+devam ediyor; hızı karşı taraftaki eşlere bağlı. Bu yüzden HTTP indirmelerinin
+penceresini (yüzde, kalan süre, "bitti") torrent için kullanmıyoruz.
 - **Devam eden / tamamlanan / başarısız** listeleri, duraklat-devam-iptal, hız limiti, bağlantı sayısı.
 
 ## Rahatsız etmeme garantileri
@@ -201,4 +205,5 @@ set AKINTI_THEME=light
 | Bağlantı yakalandı | Sağ tık ya da Chrome'dan devralınan indirme. Dosya, kayıt klasörü, iki düğme — başka hiçbir şey. |
 | Arşiv şifreli | Şifreli bir arşiv çıkarılırken. Şifre hiçbir yere kaydedilmez. |
 | İndiriliyor | "İndir"e basınca diyaloğun yerine ekranın ortasında açılır. Kapatmak indirmeyi durdurmaz. |
+| Torrent | Torrentin kendi penceresi: tohum/eş sayısı, yükleme hızı, paylaşım oranı, dosya listesi ve seçimi. |
 | İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Sen kapatana kadar durur. Düğmeler: Klasör, Klasöre çıkar, Yönetici aç, Aç — ortadaki ikisi dosya türü izin veriyorsa. |

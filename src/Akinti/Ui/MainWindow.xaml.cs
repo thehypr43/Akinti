@@ -45,6 +45,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
+        WindowEffects.Attach(this);
         DataContext = this;
         List.ItemsSource = _rows;
         _lastNav = NavAll;
@@ -174,7 +175,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             : "Akıntı";
 
         // Sabit MB/s birimi kucuk hizlarda hep "0,0" gosteriyordu; birim degere gore secilir.
-        TotalSpeedText = Format.Speed(stat.DownloadSpeed);
+        TotalSpeedText = stat.DownloadSpeed > 0 ? Format.Speed(stat.DownloadSpeed) : "0 KB/sn";
 
         _allPaused = running == 0 && paused > 0;
         TxtToggleAll.Text = _allPaused ? "Tümünü sürdür" : "Tümünü duraklat";

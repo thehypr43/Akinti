@@ -225,9 +225,10 @@
                 </Grid>
             </Border>
 
+            <Grid>
             <!-- ─────── Boş durum ─────── -->
-            <StackPanel x:Name="PnlEmpty" Visibility="Collapsed" VerticalAlignment="Center"
-                        HorizontalAlignment="Center" Margin="0,0,0,60">
+                <StackPanel x:Name="PnlEmpty" Visibility="Collapsed" VerticalAlignment="Center"
+                            HorizontalAlignment="Center" Margin="0,0,0,60">
                 <TextBlock Text="&#xE896;" FontFamily="{StaticResource F.Icon}" FontSize="34"
                            Foreground="{DynamicResource B.Neutral700}" HorizontalAlignment="Center" />
                 <TextBlock x:Name="TxtEmptyTitle" Text="İndirme yok" FontSize="16" FontWeight="Medium"
@@ -426,6 +427,7 @@
                     </ContextMenu>
                 </ListBox.ContextMenu>
             </ListBox>
+            </Grid>
         </DockPanel>
     </Grid>
 </Window>

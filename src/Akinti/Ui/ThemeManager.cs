@@ -56,6 +56,11 @@ public static class ThemeManager
         // WPF sonuncuyu kullanir, boylece Theme.xaml'deki her sey bunu gorur.
         app.Resources.MergedDictionaries.Add(dict);
         _current = dict;
+
+        // Baslik cubugu ve kenarlik DWM'e ait; DynamicResource oralara islemiyor.
+        // Tema degisince acik pencerelerin cercevesi de yeniden boyanmali, yoksa
+        // koyu temaya gecince baslik cubugu acik kalip yazisi siyah goruniyor.
+        foreach (Window w in app.Windows) WindowEffects.Apply(w);
     }
 
     // ──────────── Sistemden okuma ────────────

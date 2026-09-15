@@ -47,7 +47,6 @@ public static class PostActions
                 ErrorMessage = string.IsNullOrWhiteSpace(status.ErrorMessage)
                     ? $"aria2 hata kodu {status.ErrorCode}"
                     : status.ErrorMessage,
-                IsTorrent = status.IsTorrent,
             });
             Log.Warn($"Indirme basarisiz: {name} ({status.ErrorMessage})");
             return;
@@ -59,7 +58,6 @@ public static class PostActions
             {
                 Gid = gid, Name = name, FilePath = filePath ?? "",
                 SourceUri = pending?.SourceUri ?? "", Size = status.TotalLength,
-                Status = HistoryStatus.Cancelled, IsTorrent = status.IsTorrent,
             });
             return;
         }
@@ -92,7 +90,6 @@ public static class PostActions
             Size = status?.TotalLength ?? SafeFileLength(filePath),
             Status = HistoryStatus.Completed,
             PostActionNote = notes.Count > 0 ? string.Join(" | ", notes) : null,
-            IsTorrent = status?.IsTorrent ?? false,
         });
 
         Log.Info($"Tamamlandi: {name}{(notes.Count > 0 ? " :: " + string.Join(" | ", notes) : "")}");

@@ -242,7 +242,8 @@ async function send(url, referrer) {
 function valid(url) {
   if (typeof url !== "string" || url.length === 0 || url.length > 8192) return null;
   const lower = url.trim().toLowerCase();
-  const ok = ["http://", "https://", "ftp://", "ftps://", "sftp://", "magnet:"];
+  // magnet yok: torrent destegi kaldirildi.
+  const ok = ["http://", "https://", "ftp://", "ftps://", "sftp://"];
   return ok.some((p) => lower.startsWith(p)) ? url.trim() : null;
 }
 
@@ -256,6 +257,6 @@ function baseName(p) {
 
 function extractUrl(text) {
   if (typeof text !== "string") return null;
-  const m = text.match(/(?:https?|ftps?|sftp):\/\/\S+|magnet:\?\S+/i);
+  const m = text.match(/(?:https?|ftps?|sftp):\/\/\S+/i);
   return m ? m[0] : null;
 }

@@ -14,24 +14,17 @@ public enum RowState { Active, Waiting, Paused, Completed, Failed, Cancelled }
 /// </summary>
 public sealed class DownloadRow : INotifyPropertyChanged
 {
-    // Nocturne rozet renkleri
-    private static readonly Brush TagAccentBg   = Frozen("#FF423A6A");
-    private static readonly Brush TagAccentFg   = Frozen("#FFF5F4FF");
-    private static readonly Brush TagNeutralBg  = Frozen("#FF3F424D");
-    private static readonly Brush TagNeutralFg  = Frozen("#FFF3F5FE");
-    private static readonly Brush TagDangerBg   = Frozen("#FF4A2B2F");
-    private static readonly Brush TagDangerFg   = Frozen("#FFF6DADD");
-
-    private static readonly Brush BarAccent  = Frozen("#FF9184D9");
-    private static readonly Brush BarMuted   = Frozen("#FF595D6C");
-    private static readonly Brush BarDanger  = Frozen("#FFE06C75");
-    private static readonly Brush BarDone    = Frozen("#FFA7A1DB");
-
-    private static Brush Frozen(string hex)
+    /// <summary>Rozet ve cubuk renkleri paletten okunur.
+    ///
+    /// Burada sabit renk YOK: sabit yazilmis olanlar Windows temasi degisince
+    /// (ve vurgu rengi degisince) yerinde kalip mor bir leke birakiyordu.
+    /// Arama her cagrida yapiliyor, cunku palet calisma aninda degisebiliyor.</summary>
+    private static Brush Res(string key, string fallback)
     {
-        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-        b.Freeze();
-        return b;
+        if (Application.Current?.TryFindResource(key) is Brush b) return b;
+        var frozen = new SolidColorBrush((Color)ColorConverter.ConvertFromString(fallback));
+        frozen.Freeze();
+        return frozen;
     }
 
     public string Gid { get; init; } = "";
@@ -68,11 +61,6 @@ public sealed class DownloadRow : INotifyPropertyChanged
     public string FilePath { get => _filePath; set { if (Set(ref _filePath, value)) Changed(nameof(IconGlyph)); } }
 
     public string SourceUri { get; set; } = "";
-    public string? InfoHash { get; set; }
-    public bool IsSeeding { get; private set; }
-    public int Seeders { get; private set; }
-
-    public bool IsTorrent { get; set; }
     public DateTime? FinishedAt { get; set; }
 
     // ──────────── Gorunum alanlari ────────────
@@ -83,9 +71,9 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
     /// <summary>Dosya turune gore Segoe Fluent Icons karakteri.</summary>
     public string IconGlyph =>
-        Icons.ForFile(string.IsNullOrEmpty(FilePath) ? Name : FilePath, IsTorrent);
+        Icons.ForFile(string.IsNullOrEmpty(FilePath) ? Name : FilePath);
 
-    public string TagText => IsSeeding && State == RowState.Active ? "PAYLAŞILIYOR" : State switch
+    public string TagText => State switch
     {
         RowState.Active => "İNDİRİLİYOR",
         RowState.Waiting => "KUYRUKTA",
@@ -98,24 +86,24 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
     public Brush TagBackground => State switch
     {
-        RowState.Active => TagAccentBg,
-        RowState.Failed => TagDangerBg,
-        _ => TagNeutralBg,
+        RowState.Active => Res("B.AccentSubtle", "#280078D4"),
+        RowState.Failed => Res("B.DangerHover", "#28C42B1C"),
+        _ => Res("B.HoverText", "#14808080"),
     };
 
     public Brush TagForeground => State switch
     {
-        RowState.Active => TagAccentFg,
-        RowState.Failed => TagDangerFg,
-        _ => TagNeutralFg,
+        RowState.Active => Res("B.Accent", "#FF0078D4"),
+        RowState.Failed => Res("B.Danger", "#FFC42B1C"),
+        _ => Res("B.TextMuted", "#FF808080"),
     };
 
     public Brush BarBrush => State switch
     {
-        RowState.Active => BarAccent,
-        RowState.Completed => BarDone,
-        RowState.Failed => BarDanger,
-        _ => BarMuted,
+        RowState.Active => Res("B.Accent", "#FF0078D4"),
+        RowState.Completed => Res("B.Success", "#FF0F7B0F"),
+        RowState.Failed => Res("B.Danger", "#FFC42B1C"),
+        _ => Res("B.TextFaint", "#FF808080"),
     };
 
     /// <summary>Tasarimdaki alt satir: boyut · kaynak (ya da bitis bilgisi).</summary>
@@ -142,7 +130,6 @@ public sealed class DownloadRow : INotifyPropertyChanged
             else if (Completed > 0) meta.Add(Format.Bytes(Completed));
 
             if (!string.IsNullOrEmpty(Host)) meta.Add(Host);
-            if (IsTorrent && UploadSpeed > 0) meta.Add("↑ " + Format.Speed(UploadSpeed));
             return string.Join("  ·  ", meta);
         }
     }
@@ -152,28 +139,13 @@ public sealed class DownloadRow : INotifyPropertyChanged
         get
         {
             if (string.IsNullOrEmpty(SourceUri)) return "";
-            if (UrlHelper.IsMagnet(SourceUri)) return "magnet";
             return Uri.TryCreate(SourceUri, UriKind.Absolute, out var u) ? u.Host : "";
         }
     }
 
-    /// <summary>Torrentte yukleme hizi da yazilir: paylasirken indirme hizi sifirdir
-    /// ve satir bos gorunurdu.</summary>
-    public string SpeedText
-    {
-        get
-        {
-            if (State != RowState.Active) return "";
+    public string SpeedText => State == RowState.Active && Speed > 0 ? Format.Speed(Speed) : "";
 
-            var parts = new List<string>();
-            if (Speed > 0) parts.Add("↓ " + Format.Speed(Speed));
-            if (IsTorrent && UploadSpeed > 0) parts.Add("↑ " + Format.Speed(UploadSpeed));
-            if (IsTorrent && Seeders > 0) parts.Add(Seeders + " tohum");
-            return string.Join("  ·  ", parts);
-        }
-    }
-
-    public string EtaText => State == RowState.Active && !IsSeeding && Eta is { } e
+    public string EtaText => State == RowState.Active && Eta is { } e
         ? Format.Duration(e) + " kaldı" : "";
 
     public TimeSpan? Eta =>
@@ -245,10 +217,6 @@ public sealed class DownloadRow : INotifyPropertyChanged
             : null;
         if (!string.IsNullOrEmpty(item.FilePath)) FilePath = item.FilePath!;
         if (!string.IsNullOrEmpty(item.SourceUri)) SourceUri = item.SourceUri!;
-        InfoHash = item.InfoHash;
-        IsTorrent = item.IsTorrent;
-        IsSeeding = item.IsSeeding;
-        Seeders = item.NumSeeders;
         State = FromAria2(item.Status);
 
         // Durum degismeden de etiket degisebiliyor (indirme bitip paylasima
@@ -267,7 +235,6 @@ public sealed class DownloadRow : INotifyPropertyChanged
         Note = h.PostActionNote,
         FilePath = h.FilePath,
         SourceUri = h.SourceUri,
-        IsTorrent = h.IsTorrent,
         FinishedAt = h.FinishedAt,
         State = h.Status switch
         {

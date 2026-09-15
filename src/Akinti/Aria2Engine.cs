@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text;
 
 namespace Akinti;
@@ -62,22 +62,20 @@ public static class Aria2Engine
         if (cfg.GlobalSpeedLimitBytes > 0)
             Set("max-overall-download-limit", cfg.GlobalSpeedLimitBytes);
 
-        // --- Torrent ---
-        Set("listen-port", cfg.TorrentPort);
-        Set("dht-listen-port", cfg.TorrentPort);
-        Set("enable-dht", cfg.EnableDht ? "true" : "false");
-        Set("enable-peer-exchange", "true");
-        Set("bt-enable-lpd", "true");
-        Set("seed-ratio", cfg.SeedRatio.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        Set("seed-time", cfg.SeedTimeMinutes);
-        Set("bt-save-metadata", "true");
-        Set("follow-torrent", "true");
+        // Torrent destegi yok: aria2 BitTorrent'i yalnizca bir torrent
+        // eklendiginde kullanir, biz hic eklemiyoruz. Yine de dinleyen bir
+        // port acmasin diye DHT ve eslerarasi ozellikler kapali.
+        Set("enable-dht", "false");
+        Set("enable-dht6", "false");
+        Set("enable-peer-exchange", "false");
+        Set("bt-enable-lpd", "false");
+        Set("follow-torrent", "false");
+
 
         // --- Indirme sonrasi kanca ---
         // Ucu de ayni exe'yi cagirir; hangi olayin dustugunu exe tellStatus ile ogrenir.
         // Akinti.exe GUI-subsystem oldugu icin konsol penceresi acilmaz.
         Set("on-download-complete", AppPaths.ExePath);
-        Set("on-bt-download-complete", AppPaths.ExePath);
         Set("on-download-error", AppPaths.ExePath);
 
         foreach (var extra in cfg.ExtraAria2Args)
@@ -92,6 +90,43 @@ public static class Aria2Engine
     /// <summary>Calisan aria2c surecleri (bizim conf ile baslatilmis olanlar dahil).</summary>
     public static bool IsProcessRunning() =>
         Process.GetProcessesByName("aria2c").Length > 0;
+
+    /// <summary>
+    /// Motoru durdurur. Once RPC uzerinden nazikce kapanmasi istenir (yarim kalan
+    /// indirmeler oturum dosyasina yazilsin diye); inatci kalirsa sureç sonlandirilir.
+    /// </summary>
+    public static async Task<bool> StopAsync(Config cfg, CancellationToken ct = default)
+    {
+        if (cfg.IsConfigured)
+        {
+            try
+            {
+                using var client = new Aria2Client(cfg);
+                await client.SaveSessionAsync(ct).ConfigureAwait(false);
+                await client.ShutdownAsync(ct).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Motor RPC ile durdurulamadi: " + ex.Message);
+            }
+        }
+
+        for (var i = 0; i < 20 && IsProcessRunning(); i++)
+            await Task.Delay(250, ct).ConfigureAwait(false);
+
+        if (IsProcessRunning())
+        {
+            foreach (var p in Process.GetProcessesByName("aria2c"))
+            {
+                try { p.Kill(); } catch (Exception ex) { Log.Warn("aria2c sonlandirilamadi: " + ex.Message); }
+            }
+            await Task.Delay(300, ct).ConfigureAwait(false);
+        }
+
+        var stopped = !IsProcessRunning();
+        Log.Info(stopped ? "Motor durduruldu." : "Motor durdurulamadi.");
+        return stopped;
+    }
 
     /// <summary>
     /// Motor ayakta degilse gizli baslatir ve RPC cevap verene kadar bekler.

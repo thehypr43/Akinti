@@ -66,10 +66,6 @@ public partial class MiniWindow : Window
         if (_client is null || _finished) return;
         try
         {
-            // Magnet eklendiginde asil torrent yeni bir GID'e tasinir.
-            var followed = await _client.GetFollowedByAsync(_gid);
-            if (followed.Length > 0) _gid = followed[0];
-
             var item = await _client.TellStatusAsync(_gid);
             if (item is null) { Close(); return; }
 
@@ -83,19 +79,6 @@ public partial class MiniWindow : Window
 
     private void Apply(DownloadItem item)
     {
-        // Bir torrent bu pencereye ait degil (bittiginde durmuyor, paylasmaya
-        // devam ediyor). --mini ile bir torrent GID'i verilmisse kendi penceresine
-        // devret.
-        if (item.IsTorrent && !_finished)
-        {
-            _finished = true;
-            _timer.Stop();
-            try { new TorrentWindow(_cfg, item.Gid).Show(); }
-            catch (Exception ex) { Log.Error("Torrent penceresi acilamadi", ex); }
-            Close();
-            return;
-        }
-
         if (_firstSample)
         {
             _firstSample = false;
@@ -104,7 +87,7 @@ public partial class MiniWindow : Window
         }
 
         TxtName.Text = item.DisplayName;
-        IcoFile.Text = Icons.ForFile(item.FilePath ?? item.DisplayName, item.IsTorrent);
+        IcoFile.Text = Icons.ForFile(item.FilePath ?? item.DisplayName);
 
         Bar.Value = item.Progress * 100;
 
@@ -131,9 +114,7 @@ public partial class MiniWindow : Window
               + (host.Length > 0 ? "  ·  " + host : "")
             : host;
 
-        TxtParts.Text = item.IsTorrent
-            ? (item.NumSeeders > 0 ? item.NumSeeders + " kaynak" : "—")
-            : (item.Connections > 0 ? item.Connections.ToString() : "—");
+        TxtParts.Text = item.Connections > 0 ? item.Connections.ToString() : "—";
         TxtRemaining.Text = item.TotalLength > item.CompletedLength
             ? Format.Bytes(item.TotalLength - item.CompletedLength) : "—";
         TxtSpeed.Text = item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";

@@ -314,35 +314,6 @@ Set-ItemProperty -Path "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$HostN
                  -Name '(Default)' -Value $ManifestPath
 Ok "Kayit: HKCU\Software\Google\Chrome\NativeMessagingHosts\$HostName"
 
-# ---------------------------------------------------------------- 7b. .torrent dosyalari
-Step '.torrent dosyalari Akinti ile acilsin'
-
-# Sadece HKCU: yonetici gerekmiyor, yalnizca bu kullaniciyi etkiliyor.
-$ProgId = 'Akinti.Torrent'
-New-Item -Path "HKCU:\Software\Classes\$ProgId\shell\open\command" -Force | Out-Null
-Set-ItemProperty -Path "HKCU:\Software\Classes\$ProgId" -Name '(Default)' -Value 'Torrent dosyasi'
-Set-ItemProperty -Path "HKCU:\Software\Classes\$ProgId\shell\open\command" `
-                 -Name '(Default)' -Value ('"{0}" "%1"' -f $ExePath)
-New-Item -Path "HKCU:\Software\Classes\$ProgId\DefaultIcon" -Force | Out-Null
-Set-ItemProperty -Path "HKCU:\Software\Classes\$ProgId\DefaultIcon" `
-                 -Name '(Default)' -Value ('{0},0' -f $ExePath)
-
-# "Birlikte ac" listesinde her zaman gorunsun.
-New-Item -Path "HKCU:\Software\Classes\.torrent\OpenWithProgids" -Force | Out-Null
-Set-ItemProperty -Path "HKCU:\Software\Classes\.torrent\OpenWithProgids" `
-                 -Name $ProgId -Value ([byte[]]@()) -Type Binary
-
-# Varsayilan yapmayi dene. Windows'un kendi UserChoice kaydi varsa o kazanir
-# (imzali oldugu icin disaridan yazilamaz); o durumda kullanici bir kez elle secer.
-$UserChoice = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.torrent\UserChoice'
-if (Test-Path $UserChoice) {
-    Warn2 'Windows .torrent icin baska bir uygulamayi secmis, varsayilan degistirilmedi.'
-    Warn2 'Bir .torrent dosyasina sag tikla > Birlikte ac > Baska uygulama sec > Akinti > Her zaman.'
-} else {
-    Set-ItemProperty -Path 'HKCU:\Software\Classes\.torrent' -Name '(Default)' -Value $ProgId
-    Ok '.torrent dosyalari artik Akinti ile aciliyor.'
-}
-
 # ---------------------------------------------------------------- 8. Guvenlik duvari
 Step 'Guvenlik duvari kurali'
 $identity      = [System.Security.Principal.WindowsIdentity]::GetCurrent()

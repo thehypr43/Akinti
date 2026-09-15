@@ -55,15 +55,13 @@ public partial class SettingsWindow : Window
             ? "Bulunan: " + string.Join(", ", found.Select(a => a.DisplayName).Distinct())
             : "Kurulu arsivci bulunamadi. 7-Zip, NanaZip veya WinRAR kur.";
 
-        TxtTorrentPort.Text = _cfg.TorrentPort.ToString();
-        TxtSeedRatio.Text = _cfg.SeedRatio.ToString(CultureInfo.InvariantCulture);
-        TxtSeedTime.Text = _cfg.SeedTimeMinutes.ToString();
-        ChkDht.IsChecked = _cfg.EnableDht;
 
         ChkOpenFolderDefault.IsChecked = _cfg.OpenFolderAfterDownloadDefault;
         ChkAutoStart.IsChecked = IsScheduledTaskEnabled();
 
         TxtExtraArgs.Text = string.Join(Environment.NewLine, _cfg.ExtraAria2Args);
+
+        UpdateEngineState();
 
         TxtSecurity.Text = _cfg.IsConfigured
             ? $"RPC portu {_cfg.RpcPort}, sadece 127.0.0.1 dinleniyor ve rastgele bir parola ile kilitli. " +
@@ -81,18 +79,6 @@ public partial class SettingsWindow : Window
                          "Bağlantı sayısı 1-16 arasında olmalı.")) return;
         if (!TryParseInt(TxtGlobalLimit.Text, 0, int.MaxValue, out var limitKb,
                          "Toplam hız limiti negatif olamaz.")) return;
-        if (!TryParseInt(TxtTorrentPort.Text, 1024, 65535, out var btPort,
-                         "Torrent portu 1024-65535 arasında olmalı.")) return;
-        if (!TryParseInt(TxtSeedTime.Text, 0, int.MaxValue, out var seedTime,
-                         "Paylaşım süresi negatif olamaz.")) return;
-
-        if (!double.TryParse(TxtSeedRatio.Text.Trim(), NumberStyles.Float,
-                             CultureInfo.InvariantCulture, out var ratio) || ratio < 0)
-        {
-            Warn("Paylasim orani gecerli bir sayi olmali (ornek: 1.0).");
-            return;
-        }
-
         var dir = TxtDownloadDir.Text.Trim();
         if (string.IsNullOrWhiteSpace(dir)) { Warn("Varsayilan indirme klasoru bos olamaz."); return; }
         try { Directory.CreateDirectory(dir); }
@@ -103,10 +89,6 @@ public partial class SettingsWindow : Window
         _cfg.ConnectionsPerDownload = conns;
         _cfg.GlobalSpeedLimitBytes = (long)limitKb * 1024;
         _cfg.ArchiverPath = CmbArchiver.Text.Trim();
-        _cfg.TorrentPort = btPort;
-        _cfg.SeedRatio = ratio;
-        _cfg.SeedTimeMinutes = seedTime;
-        _cfg.EnableDht = ChkDht.IsChecked == true;
         _cfg.OpenFolderAfterDownloadDefault = ChkOpenFolderDefault.IsChecked == true;
         _cfg.ExtraAria2Args = TxtExtraArgs.Text
             .Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -250,6 +232,44 @@ public partial class SettingsWindow : Window
         if (int.TryParse(text.Trim(), out value) && value >= min && value <= max) return true;
         Warn(error);
         return false;
+    }
+
+    // ---------------- Motor ----------------
+
+    /// <summary>Motorun su anki hali. Kullanici Gorev Yoneticisi'ne bakmadan
+    /// gorsun diye ayarlarda duruyor.</summary>
+    private void UpdateEngineState()
+    {
+        var running = Aria2Engine.IsProcessRunning();
+        TxtEngineState.Text = running ? "Çalışıyor" : "Durdu";
+        TxtEngineState.Foreground = (System.Windows.Media.Brush)
+            FindResource(running ? "B.Success" : "B.TextFaint");
+        BtnEngine.Content = running ? "Motoru durdur" : "Motoru başlat";
+    }
+
+    private async void BtnEngine_Click(object sender, RoutedEventArgs e)
+    {
+        BtnEngine.IsEnabled = false;
+        try
+        {
+            if (Aria2Engine.IsProcessRunning())
+            {
+                TxtStatus.Text = "Motor durduruluyor…";
+                var ok = await Aria2Engine.StopAsync(_cfg);
+                TxtStatus.Text = ok ? "Motor durduruldu." : "Motor durdurulamadı.";
+            }
+            else
+            {
+                TxtStatus.Text = "Motor başlatılıyor…";
+                var ok = await Aria2Engine.EnsureRunningAsync(_cfg);
+                TxtStatus.Text = ok ? "Motor çalışıyor." : "Motor başlatılamadı.";
+            }
+        }
+        finally
+        {
+            UpdateEngineState();
+            BtnEngine.IsEnabled = true;
+        }
     }
 
     private void Warn(string message) =>

@@ -7,19 +7,10 @@ namespace Akinti;
 
 public static class UrlHelper
 {
-    public static bool IsMagnet(string url) =>
-        url.StartsWith("magnet:", StringComparison.OrdinalIgnoreCase);
-
-    public static bool IsTorrentFileUrl(string url)
-    {
-        var name = GuessFileName(url);
-        return name.EndsWith(".torrent", StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>Yalnizca indirilebilir sema. javascript:, data:, file: gibi semalar reddedilir.</summary>
+    /// <summary>Yalnizca indirilebilir sema. javascript:, data:, file:, magnet:
+    /// gibi semalar reddedilir - torrent destegi yok.</summary>
     public static bool IsSupportedScheme(string url)
     {
-        if (IsMagnet(url)) return true;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return false;
         return u.Scheme is "http" or "https" or "ftp" or "ftps" or "sftp";
     }
@@ -27,17 +18,6 @@ public static class UrlHelper
     /// <summary>URL'den dosya adi tahmini. Sorgu dizesi ve yuzde kodlama temizlenir.</summary>
     public static string GuessFileName(string url)
     {
-        if (IsMagnet(url))
-        {
-            // magnet:?...&dn=<isim>
-            foreach (var part in url.AsSpan(7).ToString().TrimStart('?').Split('&'))
-            {
-                if (part.StartsWith("dn=", StringComparison.OrdinalIgnoreCase))
-                    return Sanitize(Uri.UnescapeDataString(part[3..].Replace('+', ' ')));
-            }
-            return "torrent";
-        }
-
         try
         {
             var path = Uri.TryCreate(url, UriKind.Absolute, out var u)
@@ -98,7 +78,7 @@ public static class RemoteProbe
     public static async Task<RemoteFileInfo> ProbeAsync(string url, CancellationToken ct = default)
     {
         var fallback = new RemoteFileInfo { FileName = UrlHelper.GuessFileName(url) };
-        if (UrlHelper.IsMagnet(url) || !UrlHelper.IsSupportedScheme(url)) return fallback;
+        if (!UrlHelper.IsSupportedScheme(url)) return fallback;
 
         try
         {
@@ -158,9 +138,8 @@ public static class Icons
 
     /// <summary>Dosyanin ne oldugunu tek kelimeyle soyler: "Uygulama", "Arsiv"...
     /// Bitmis indirme penceresinde boyutun yanina yaziliyor.</summary>
-    public static string KindOf(string nameOrPath, bool isTorrent = false)
+    public static string KindOf(string nameOrPath)
     {
-        if (isTorrent) return "Torrent";
         return Path.GetExtension(nameOrPath).ToLowerInvariant() switch
         {
             ".mp4" or ".mkv" or ".avi" or ".mov" or ".webm" or ".wmv" => "Video",
@@ -170,7 +149,6 @@ public static class Icons
             ".exe" or ".msi" or ".msix" => "Uygulama",
             ".bat" or ".cmd" or ".ps1" => "Betik",
             ".iso" or ".img" => "Disk imajı",
-            ".torrent" => "Torrent",
             ".pdf" or ".docx" or ".xlsx" or ".pptx" or ".epub" or ".txt" => "Belge",
             _ => "Dosya",
         };

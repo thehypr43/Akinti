@@ -108,33 +108,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ═══ Torrent ═══ -->
-                <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
-                    <StackPanel>
-                        <TextBlock Text="TORRENT" Style="{StaticResource T.Kicker}" Margin="0,0,0,12" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                                <TextBlock Text="Port" Style="{StaticResource T.Meta}" Margin="0,0,0,5" />
-                                <TextBox x:Name="TxtTorrentPort" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="4,0,4,0">
-                                <TextBlock Text="Paylaşım oranı" Style="{StaticResource T.Meta}" Margin="0,0,0,5" />
-                                <TextBox x:Name="TxtSeedRatio" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" Margin="8,0,0,0">
-                                <TextBlock Text="Paylaşım süresi (dk)" Style="{StaticResource T.Meta}" Margin="0,0,0,5" />
-                                <TextBox x:Name="TxtSeedTime" />
-                            </StackPanel>
-                        </Grid>
-                        <CheckBox x:Name="ChkDht" Content="DHT kullan" Margin="0,12,0,0" />
-                    </StackPanel>
-                </Border>
-
                 <!-- ═══ Davranis ═══ -->
                 <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
                     <StackPanel>
@@ -151,6 +124,24 @@
                         <TextBox x:Name="TxtExtraArgs" AcceptsReturn="True" Height="66"
                                  VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
                                  FontFamily="Cascadia Mono, Consolas" FontSize="12" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══ Motor ═══ -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="MOTOR" Style="{StaticResource T.Kicker}" Margin="0,0,0,10" />
+                        <Grid>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,150,0">
+                                <TextBlock x:Name="TxtEngineState" Text="—" FontSize="14" />
+                                <TextBlock Text="Arka planda duran tek süreç aria2c. Durdurursan indirmeler de durur; yeni bir indirme başlattığında kendiliğinden geri gelir."
+                                           Style="{StaticResource T.Meta}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button x:Name="BtnEngine" Style="{StaticResource Btn.Secondary}"
+                                    Content="Motoru durdur" Click="BtnEngine_Click"
+                                    VerticalAlignment="Top" HorizontalAlignment="Right"
+                                    MinWidth="132" Padding="12,7" />
+                        </Grid>
                     </StackPanel>
                 </Border>
 

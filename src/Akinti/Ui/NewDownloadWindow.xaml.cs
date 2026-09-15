@@ -23,10 +23,8 @@ public partial class NewDownloadWindow : Window
     private string? _userAgent;
 
     private CancellationTokenSource? _probeCts;
-    private readonly string? _torrentFile;
     private string _folder;
     private string _fileName = "";
-    private bool _isTorrentSource;
     private bool _userEditedFileName;
     private bool _loading = true;
 
@@ -36,25 +34,6 @@ public partial class NewDownloadWindow : Window
     {
         _cookie = captured.Cookie;
         _userAgent = captured.UserAgent;
-    }
-
-    /// <summary>Diskteki bir .torrent dosyasi (Gezgin'den cift tiklama).
-    /// Adres yok; dosyanin kendisi aria2'ye iceriyi olarak veriliyor.</summary>
-    public static NewDownloadWindow ForTorrentFile(string path) => new(path, forTorrentFile: true);
-
-    private NewDownloadWindow(string path, bool forTorrentFile) : this((string?)null)
-    {
-        _torrentFile = path;
-        _isTorrentSource = true;
-
-        Title = "Torrent dosyası";
-        PnlManual.Visibility = Visibility.Collapsed;
-        ChkPickFiles.Visibility = Visibility.Visible;
-
-        _fileName = Path.GetFileNameWithoutExtension(path);
-        TxtFileTitle.Text = _fileName;
-        IcoFile.Text = Icons.ForFile(path, isTorrent: true);
-        TxtSize.Text = "Torrent dosyası  ·  " + Path.GetFileName(path);
     }
 
     public NewDownloadWindow(string? url, string? referrer = null, string? suggestedName = null)
@@ -87,8 +66,6 @@ public partial class NewDownloadWindow : Window
     {
         _loading = false;
 
-        if (_torrentFile is not null) return;
-
         if (string.IsNullOrWhiteSpace(TxtUrl.Text))
         {
             TxtUrl.Focus();
@@ -114,21 +91,11 @@ public partial class NewDownloadWindow : Window
 
         TxtStatus.Text = "";
 
-        _isTorrentSource = UrlHelper.IsMagnet(url) || UrlHelper.IsTorrentFileUrl(url);
-        ChkPickFiles.Visibility = _isTorrentSource ? Visibility.Visible : Visibility.Collapsed;
-
         _probeCts?.Cancel();
         _probeCts = new CancellationTokenSource();
         var ct = _probeCts.Token;
 
         var host = Uri.TryCreate(url, UriKind.Absolute, out var u) ? u.Host : "";
-
-        if (UrlHelper.IsMagnet(url))
-        {
-            SetFileName(UrlHelper.GuessFileName(url));
-            TxtSize.Text = "Boyut torrent bilgileri gelince belli olur";
-            return;
-        }
 
         TxtSize.Text = "Boyut sorgulanıyor…";
         SetFileName(UrlHelper.GuessFileName(url));
@@ -162,7 +129,7 @@ public partial class NewDownloadWindow : Window
         }
 
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
-        IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
+        IcoFile.Text = Icons.ForFile(_fileName);
     }
 
     private void TxtFileName_TextChanged(object sender, TextChangedEventArgs e)
@@ -170,7 +137,7 @@ public partial class NewDownloadWindow : Window
         if (!_loading) _userEditedFileName = true;
         _fileName = TxtFileName.Text.Trim();
         TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
-        IcoFile.Text = Icons.ForFile(_fileName, _isTorrentSource);
+        IcoFile.Text = Icons.ForFile(_fileName);
     }
 
     private async void TxtUrl_TextChanged(object sender, TextChangedEventArgs e)
@@ -205,11 +172,7 @@ public partial class NewDownloadWindow : Window
     private async Task StartAsync(bool paused)
     {
         var url = TxtUrl.Text.Trim();
-        if (_torrentFile is null && !UrlHelper.IsSupportedScheme(url))
-        {
-            Warn("Geçerli bir indirme adresi girin.");
-            return;
-        }
+        if (!UrlHelper.IsSupportedScheme(url)) { Warn("Geçerli bir indirme adresi girin."); return; }
 
         if (!_cfg.IsConfigured)
         {
@@ -229,7 +192,6 @@ public partial class NewDownloadWindow : Window
         var req = new DownloadRequest
         {
             Url = url,
-            LocalTorrentPath = _torrentFile,
             FileName = _fileName,
             TargetDir = _folder,
             Connections = Math.Clamp(_cfg.ConnectionsPerDownload, 1, 16),
@@ -241,8 +203,6 @@ public partial class NewDownloadWindow : Window
             UserAgent = _userAgent,
         };
 
-        if (_isTorrentSource) req.SeedRatio = _cfg.SeedRatio;
-
         try
         {
             SetBusy(true, "Kuyruğa ekleniyor…");
@@ -252,11 +212,7 @@ public partial class NewDownloadWindow : Window
             // Ilerleme penceresi diyalogdan ONCE acilir: bu surecin son penceresi
             // kapaninca uygulama sonlaniyor, once yenisini acmazsak sureç olur ve
             // indirme baslar ama kullanici hicbir sey gormez.
-            //
-            // Torrent kendi penceresini aciyor: tohum/es sayisi, paylasim orani ve
-            // dosya listesi sıradan bir indirme penceresine sigmiyor.
-            if (_isTorrentSource) new TorrentWindow(_cfg, gid).Show();
-            else if (!paused) new MiniWindow(_cfg, gid).Show();
+            if (!paused) new MiniWindow(_cfg, gid).Show();
 
             Close();
         }

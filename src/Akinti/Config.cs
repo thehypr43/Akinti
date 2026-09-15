@@ -33,13 +33,6 @@ public sealed class Config
     /// <summary>Bos ise otomatik tespit edilir (bkz. Archivers).</summary>
     public string ArchiverPath { get; set; } = "";
 
-    // --- Torrent ---
-    public int TorrentPort { get; set; } = 51413;
-    public bool EnableDht { get; set; } = true;
-    public double SeedRatio { get; set; } = 1.0;
-    /// <summary>Dakika. 0 = oran dolunca dur.</summary>
-    public int SeedTimeMinutes { get; set; }
-
     // --- Davranis ---
     /// <summary>
     /// Diyalogu atlayip dogrudan indirmeye baslama. VARSAYILAN KAPALI ve oyle kalmali:

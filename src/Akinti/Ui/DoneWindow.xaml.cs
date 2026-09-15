@@ -16,7 +16,6 @@ namespace Akinti.Ui;
 public partial class DoneWindow : Window
 {
     private readonly string _filePath;
-    private readonly bool _isTorrent;
     private string? _extractedDir;
 
     public DoneWindow(DownloadItem item, TimeSpan? elapsed = null)
@@ -25,10 +24,9 @@ public partial class DoneWindow : Window
         WindowEffects.Attach(this);
 
         _filePath = PostActions.ResolveFilePath(item.FilePath, item.Dir, item.DisplayName);
-        _isTorrent = item.IsTorrent;
         var failed = item.Status == Aria2Status.Error;
 
-        IcoFile.Text = Icons.ForFile(_filePath.Length > 0 ? _filePath : item.DisplayName, item.IsTorrent);
+        IcoFile.Text = Icons.ForFile(_filePath.Length > 0 ? _filePath : item.DisplayName);
         TxtName.Text = item.DisplayName;
 
         var host = string.IsNullOrEmpty(item.SourceUri) ? ""
@@ -40,7 +38,7 @@ public partial class DoneWindow : Window
 
         var size = item.TotalLength > 0 ? item.TotalLength : SafeLength(_filePath);
         TxtSizeValue.Text = size > 0 ? Format.Bytes(size) : "—";
-        TxtMeta.Text = Icons.KindOf(_filePath.Length > 0 ? _filePath : item.DisplayName, item.IsTorrent)
+        TxtMeta.Text = Icons.KindOf(_filePath.Length > 0 ? _filePath : item.DisplayName)
                        + (size > 0 ? "  ·  " + Format.Bytes(size) : "");
 
         if (elapsed is { } t && t.TotalSeconds >= 1)
@@ -64,10 +62,9 @@ public partial class DoneWindow : Window
         Title = "İndirme tamamlandı";
 
         var exists = _filePath.Length > 0 && File.Exists(_filePath);
-        BtnExtract.Visibility = exists && !_isTorrent
-            && Archivers.IsArchive(_filePath) && Archivers.AnyAvailable()
+        BtnExtract.Visibility = exists && Archivers.IsArchive(_filePath) && Archivers.AnyAvailable()
             ? Visibility.Visible : Visibility.Collapsed;
-        BtnRunAdmin.Visibility = exists && !_isTorrent && PostActions.IsRunnable(_filePath)
+        BtnRunAdmin.Visibility = exists && PostActions.IsRunnable(_filePath)
             ? Visibility.Visible : Visibility.Collapsed;
         BtnOpenFile.Visibility = exists || _filePath.Length > 0
             ? Visibility.Visible : Visibility.Collapsed;

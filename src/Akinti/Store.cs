@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Akinti;
 
@@ -32,7 +32,6 @@ public sealed class HistoryEntry
     public string? ErrorMessage { get; set; }
     public string? PostActionNote { get; set; }
     public DateTime FinishedAt { get; set; } = DateTime.Now;
-    public bool IsTorrent { get; set; }
 }
 
 /// <summary>

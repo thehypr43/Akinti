@@ -69,6 +69,30 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
     public string PercentText => State == RowState.Failed ? "" : $"{(int)Percent}%";
 
+    /// <summary>Dosya karesinde yazan uzanti: ZIP, EXE, MP4... Tasarimda bu kare
+    /// ikon degil, dosyanin uzantisini tasiyor.</summary>
+    public string KindShort
+    {
+        get
+        {
+            var name = string.IsNullOrEmpty(FilePath) ? Name : FilePath;
+            var ext = System.IO.Path.GetExtension(name).TrimStart('.');
+            if (ext.Length == 0) return "DSY";
+            return (ext.Length > 4 ? ext[..4] : ext).ToUpperInvariant();
+        }
+    }
+
+    /// <summary>"8 bölüm" — aria2 su an kac baglanti kullaniyor.</summary>
+    public string PartsText => State == RowState.Active && Connections > 0
+        ? Connections + " bölüm" : "";
+
+    private int _connections;
+    public int Connections
+    {
+        get => _connections;
+        set { if (Set(ref _connections, value)) Changed(nameof(PartsText)); }
+    }
+
     /// <summary>Dosya turune gore Segoe Fluent Icons karakteri.</summary>
     public string IconGlyph =>
         Icons.ForFile(string.IsNullOrEmpty(FilePath) ? Name : FilePath);
@@ -129,6 +153,8 @@ public sealed class DownloadRow : INotifyPropertyChanged
             if (Total > 0) meta.Add($"{Format.Bytes(Completed)} / {Format.Bytes(Total)}");
             else if (Completed > 0) meta.Add(Format.Bytes(Completed));
 
+            if (State == RowState.Active && Speed > 0) meta.Add(Format.Speed(Speed));
+            if (State == RowState.Active && Eta is { } eta) meta.Add(Format.Duration(eta) + " kaldı");
             if (!string.IsNullOrEmpty(Host)) meta.Add(Host);
             return string.Join("  ·  ", meta);
         }
@@ -172,12 +198,14 @@ public sealed class DownloadRow : INotifyPropertyChanged
         Changed(nameof(MetaText));
         Changed(nameof(SpeedText));
         Changed(nameof(EtaText));
+        Changed(nameof(PartsText));
     }
 
     private void RefreshAll()
     {
         RefreshProgress();
         Changed(nameof(TagText));
+        Changed(nameof(KindShort));
         Changed(nameof(TagBackground));
         Changed(nameof(TagForeground));
         Changed(nameof(BarBrush));
@@ -210,6 +238,7 @@ public sealed class DownloadRow : INotifyPropertyChanged
         Total = item.TotalLength;
         Completed = item.CompletedLength;
         Speed = item.DownloadSpeed;
+        Connections = item.Connections;
         UploadSpeed = item.UploadSpeed;
         Error = item.Status == Aria2Status.Error
             ? (string.IsNullOrWhiteSpace(item.ErrorMessage)

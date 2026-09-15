@@ -23,28 +23,42 @@
     <sys:Double x:Key="S6">16.8</sys:Double>
     <sys:Double x:Key="S8">22.4</sys:Double>
 
+    <!-- Tasarimdaki yaricaplar: denetim 5, kart 7, dosya karesi 6, pencere 9. -->
     <CornerRadius x:Key="R.Sm">4</CornerRadius>
-    <CornerRadius x:Key="R.Md">8</CornerRadius>
-    <CornerRadius x:Key="R.Lg">14</CornerRadius>
-    <CornerRadius x:Key="R.Tag">6</CornerRadius>
+    <CornerRadius x:Key="R.Ctl">5</CornerRadius>
+    <CornerRadius x:Key="R.Tile">6</CornerRadius>
+    <CornerRadius x:Key="R.Md">7</CornerRadius>
+    <CornerRadius x:Key="R.Lg">9</CornerRadius>
+    <CornerRadius x:Key="R.Tag">9</CornerRadius>
 
-    <FontFamily x:Key="F.Ui">Inter, Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="F.Ui">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="F.Display">Segoe UI Variable Display, Segoe UI</FontFamily>
+    <FontFamily x:Key="F.Mono">Cascadia Mono, Consolas</FontFamily>
     <FontFamily x:Key="F.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <!-- ══════════════ Tipografi ══════════════ -->
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
         <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
         <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
     </Style>
 
+    <!-- Sayfa basligi: tasarimda 28px, Display kesimi. -->
     <Style x:Key="T.H4" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
+        <Setter Property="FontFamily" Value="{StaticResource F.Display}" />
         <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
-        <Setter Property="FontSize" Value="20" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Diyalog basligi: 19-20px Display. -->
+    <Style x:Key="T.H5" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Display}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <Style x:Key="T.Body" TargetType="TextBlock">
@@ -55,31 +69,39 @@
 
     <Style x:Key="T.Muted" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="Foreground" Value="{DynamicResource B.TextFaint}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.TextMuted}" />
         <Setter Property="FontSize" Value="13" />
     </Style>
 
     <Style x:Key="T.Meta" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="Foreground" Value="{DynamicResource B.TextFaint}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.TextMuted}" />
         <Setter Property="FontSize" Value="12" />
     </Style>
 
-    <!-- .card-kicker: 10px, harf araligi genis, buyuk harf, accent -->
+    <!-- Bolum basligi: mono, genis harf araligi, sonuk renk (tasarimdaki kicker) -->
     <Style x:Key="T.Kicker" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="Foreground" Value="{DynamicResource B.Accent}" />
-        <Setter Property="FontSize" Value="10" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontFamily" Value="{StaticResource F.Mono}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.TextFaint}" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
     </Style>
 
     <!-- Kenar cubugu bolum basligi: AKTARIMLAR -->
+    <!-- Alan etiketi: BOYUT, TUR, KAYNAK... 11px, sonuk. -->
     <Style x:Key="T.SectionLabel" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
         <Setter Property="Foreground" Value="{DynamicResource B.TextFaint}" />
-        <Setter Property="FontSize" Value="10" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="11" />
+    </Style>
+
+    <!-- Alan degeri: 13px, yari kalin. -->
+    <Style x:Key="T.Value" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <!-- Rakamlarin genisligi sabit kalsin: hiz/yuzde titremesin -->
@@ -100,13 +122,14 @@
     <!-- ══════════════ Dugmeler (.btn) ══════════════ -->
     <Style x:Key="Btn.Base" TargetType="ButtonBase">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="10,5.6" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="13,0" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -117,7 +140,7 @@
                     <Border x:Name="bd" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource R.Md}">
+                            CornerRadius="{StaticResource R.Ctl}">
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -137,42 +160,56 @@
     </Style>
 
     <!-- .btn-primary: accent yazi + accent cerceve, DOLGU YOK -->
+    <!-- Birincil dugme tasarimda DOLU: accent zemin, uzerinde accentink yazi.
+         (Onceki tasarimin cerceveli dugmesi degil.) -->
     <Style x:Key="Btn.Primary" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
-        <Setter Property="Foreground" Value="{DynamicResource B.Accent}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource B.Accent}" />
+        <Setter Property="Background" Value="{DynamicResource B.Accent}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.AccentText}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B.ControlStroke}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource B.HoverAccent}" />
+                <Setter Property="Opacity" Value="0.9" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.8" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="Btn.Secondary" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
-        <Setter Property="Background" Value="{DynamicResource B.ControlFill}" />
+        <Setter Property="Background" Value="{DynamicResource B.Surface}" />
         <Setter Property="BorderBrush" Value="{DynamicResource B.ControlStroke}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource B.HoverText}" />
             </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource B.Press}" />
+            </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style x:Key="Btn.Ghost" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
-        <Setter Property="Foreground" Value="{DynamicResource B.Accent}" />
-        <Setter Property="Padding" Value="2.8,5.6" />
+        <Setter Property="Foreground" Value="{DynamicResource B.TextMuted}" />
+        <Setter Property="Padding" Value="12,0" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource B.GhostHover}" />
+                <Setter Property="Background" Value="{DynamicResource B.HoverText}" />
+                <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <!-- .btn-ghost.btn-icon: 36x36 kare, satir ici eylemler -->
     <Style x:Key="Btn.Icon" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
-        <Setter Property="Width" Value="34" />
-        <Setter Property="Height" Value="34" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinHeight" Value="32" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="Foreground" Value="{DynamicResource B.TextDim}" />
+        <Setter Property="Background" Value="{DynamicResource B.Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B.ControlStroke}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource B.HoverText}" />
@@ -234,18 +271,26 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="bd" Background="Transparent" CornerRadius="{StaticResource R.Md}"
-                            Padding="10,8">
-                        <ContentPresenter VerticalAlignment="Center"
+                    <Grid Height="40">
+                        <Border x:Name="bd" Background="Transparent" CornerRadius="{StaticResource R.Ctl}"
+                                Padding="12,0" />
+                        <!-- Secili ogenin sol kenarindaki accent hap: Fluent'in
+                             gezinme gostergesi. Yukaridan ve asagidan 10px icerde. -->
+                        <Rectangle x:Name="pill" Width="3" RadiusX="2" RadiusY="2"
+                                   HorizontalAlignment="Left" Margin="0,10"
+                                   Fill="{DynamicResource B.Accent}" Visibility="Collapsed" />
+                        <ContentPresenter VerticalAlignment="Center" Margin="12,0"
                                           TextElement.Foreground="{TemplateBinding Foreground}" />
-                    </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="Background" Value="{DynamicResource B.HoverSubtle}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource B.Surface}" />
+                            <Setter TargetName="bd" Property="Background" Value="{DynamicResource B.HoverText}" />
+                            <Setter TargetName="pill" Property="Visibility" Value="Visible" />
                             <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -256,13 +301,13 @@
     <!-- ══════════════ Girdi (.input) ══════════════ -->
     <Style TargetType="TextBox">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="32" />
         <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
-        <Setter Property="Background" Value="{DynamicResource B.ControlFill}" />
+        <Setter Property="Background" Value="{DynamicResource B.Card2}" />
         <Setter Property="BorderBrush" Value="{DynamicResource B.ControlStroke}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Padding" Value="10,0" />
         <Setter Property="CaretBrush" Value="{DynamicResource B.Accent}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource B.Accent}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -270,19 +315,26 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="bd" Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource R.Md}">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    </Border>
+                    <Grid>
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource R.Ctl}">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <!-- Fluent'in imzasi: odaktaki alanin ALT kenari accent olur.
+                             WPF tek kenari ayri renklendiremedigi icin ayri bir cizgi. -->
+                        <Rectangle x:Name="focusLine" Height="1.5" VerticalAlignment="Bottom"
+                                   Margin="1,0" Fill="{DynamicResource B.Accent}"
+                                   Visibility="Collapsed" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource B.InputHover}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource B.Accent}" />
+                            <Setter TargetName="focusLine" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5" />
@@ -297,13 +349,13 @@
          PasswordBox tarafindan doldurulmasi. -->
     <Style TargetType="PasswordBox">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinHeight" Value="32" />
         <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
-        <Setter Property="Background" Value="{DynamicResource B.ControlFill}" />
+        <Setter Property="Background" Value="{DynamicResource B.Card2}" />
         <Setter Property="BorderBrush" Value="{DynamicResource B.ControlStroke}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Padding" Value="10,0" />
         <Setter Property="CaretBrush" Value="{DynamicResource B.Accent}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource B.Accent}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -311,19 +363,26 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="PasswordBox">
-                    <Border x:Name="bd" Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{StaticResource R.Md}">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                    </Border>
+                    <Grid>
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource R.Ctl}">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <!-- Fluent'in imzasi: odaktaki alanin ALT kenari accent olur.
+                             WPF tek kenari ayri renklendiremedigi icin ayri bir cizgi. -->
+                        <Rectangle x:Name="focusLine" Height="1.5" VerticalAlignment="Bottom"
+                                   Margin="1,0" Fill="{DynamicResource B.Accent}"
+                                   Visibility="Collapsed" />
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource B.InputHover}" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="bd" Property="BorderBrush" Value="{DynamicResource B.Accent}" />
+                            <Setter TargetName="focusLine" Property="Visibility" Value="Visible" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -335,7 +394,7 @@
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource B.Surface}" />
         <Setter Property="CornerRadius" Value="{StaticResource R.Md}" />
-        <Setter Property="Padding" Value="8.4" />
+        <Setter Property="Padding" Value="14" />
         <Setter Property="BorderBrush" Value="{DynamicResource B.Neutral800}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
@@ -347,28 +406,41 @@
         <Setter Property="Padding" Value="8.4,8.4" />
     </Style>
 
-    <!-- Dosya turu karesi: satir basindaki 36x36 ikon kutusu -->
+    <!-- Dosya turu karesi: tasarimda 40x40, ikon degil UZANTI yazisi tasiyor. -->
     <Style x:Key="FileTile" TargetType="Border">
-        <Setter Property="Width" Value="36" />
-        <Setter Property="Height" Value="36" />
-        <Setter Property="Background" Value="{DynamicResource B.Surface}" />
-        <Setter Property="CornerRadius" Value="{StaticResource R.Md}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource B.Divider}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Background" Value="{DynamicResource B.TrackDim}" />
+        <Setter Property="CornerRadius" Value="{StaticResource R.Tile}" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Karenin icindeki uzanti: ZIP, EXE, MP4... -->
+    <Style x:Key="T.FileKind" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource F.Mono}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource B.TextMuted}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!-- ══════════════ Rozet (.tag) ══════════════ -->
+    <!-- Sayac rozeti: tasarimda accent dolgulu hap. -->
     <Style x:Key="Tag" TargetType="Border">
         <Setter Property="CornerRadius" Value="{StaticResource R.Tag}" />
-        <Setter Property="Padding" Value="10,3" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="MinWidth" Value="20" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Background" Value="{DynamicResource B.Neutral800}" />
+        <Setter Property="Background" Value="{DynamicResource B.Accent}" />
     </Style>
 
     <Style x:Key="T.TagText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
         <Setter Property="FontSize" Value="11" />
-        <Setter Property="Foreground" Value="{DynamicResource C.Neutral100}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource B.AccentText}" />
     </Style>
 
     <!-- ══════════════ Ayirici (.hr) — iki ucu sonumleniyor ══════════════ -->
@@ -380,7 +452,7 @@
 
     <!-- ══════════════ Ilerleme cubugu ══════════════ -->
     <Style x:Key="Bar" TargetType="ProgressBar">
-        <Setter Property="Height" Value="3" />
+        <Setter Property="Height" Value="4" />
         <Setter Property="Background" Value="{DynamicResource B.TrackDim}" />
         <Setter Property="Foreground" Value="{DynamicResource B.Accent}" />
         <Setter Property="BorderThickness" Value="0" />

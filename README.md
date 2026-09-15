@@ -179,26 +179,26 @@ Sorun olursa: `%APPDATA%\Akinti\akinti.log`
 
 ## Tasarım
 
-Windows 11'in kendi görünümü. Başlık çubuğu da Windows'un kendisi: kapat / küçült /
-büyüt düğmeleri, çift tıklayıp büyütme, Snap yerleşimleri hep sistemin — elle çizilmiş
-düğmeler bunların hiçbirini vermiyordu. Çubuk, pencere zeminiyle aynı renge boyanıyor. Açık/koyu tema ve vurgu rengi **sistemden** okunur
-(`Ui/ThemeManager.cs`): Windows'ta temayı değiştirdiğinde açık pencereler de anında döner.
-Pencerelerin yuvarlatılmış köşesi ve ince kenar çizgisi DWM'den gelir (`Ui/WindowEffects.cs`).
+Arayüz, Claude Design'daki **Fluent İndirme Yöneticisi** dosyasından uygulandı:
+Windows 11'in kendi Fluent diline yakın duran bir sistem. Renkler, ölçüler ve
+yarıçaplar oradan birebir alındı.
 
-Ölçüler, köşe yarıçapları, tipografi ve denetim şablonları `src/Akinti/Ui/Theme.xaml`
-içinde durur; renkler orada **yok**, hepsi çalışma anında paletten gelir.
+| | Açık | Koyu |
+|---|---|---|
+| Vurgu | `#0f6cbd` | `#4cc2ff` |
+| Pencere zemini | `#eceff3` + mica degradesi | `#171717` + mica degradesi |
+| Kart | `#ffffff` | `#2d2d2d` |
+| Yazı | `#191919` / `#5c5c5c` / `#8a8a8a` | `#ffffff` / `#c5c5c5` / `#909090` |
 
-İki temayı da denemek için Windows ayarını kurcalamaya gerek yok:
+Açık/koyu seçimi **Windows'tan** gelir (`Ui/ThemeManager.cs`), vurgu rengi
+tasarımın kendi rengidir — Windows'un vurgusu mor/pembe seçilmiş olabiliyor ve
+tasarımın mavisiyle çakışıyordu.
 
-```bash
-set AKINTI_THEME=light
-```
+Ölçüler: denetim yarıçapı 5, kart 7, dosya karesi 6, pencere 9; düğme yüksekliği
+32 (araç çubuğu) / 34 (diyalog); satır ızgarası `44 | * | 190 | auto`. Yazı tipi
+Segoe UI Variable (başlıklarda Display kesimi), dosya karesindeki uzantı ve bölüm
+başlıkları mono.
 
-### Üç pencere
+Tasarımın kendi çizdiği başlık çubuğu **kullanılmadı**: kapat/küçült/büyüt
+Windows'un gerçek düğmeleri olarak kalıyor, çubuk pencere zeminine boyanıyor.
 
-| Pencere | Ne zaman |
-|---|---|
-| Bağlantı yakalandı | Sağ tık ya da Chrome'dan devralınan indirme. Dosya, kayıt klasörü, iki düğme — başka hiçbir şey. |
-| Arşiv şifreli | Şifreli bir arşiv çıkarılırken. Şifre hiçbir yere kaydedilmez. |
-| İndiriliyor | "İndir"e basınca diyaloğun yerine ekranın ortasında açılır. Kapatmak indirmeyi durdurmaz. |
-| İndirme tamamlandı | İndirme bitince ilerleme penceresi kapanıp bunu açar. Sen kapatana kadar durur. Düğmeler: Klasör, Klasöre çıkar, Yönetici aç, Aç — ortadaki ikisi dosya türü izin veriyorsa. |

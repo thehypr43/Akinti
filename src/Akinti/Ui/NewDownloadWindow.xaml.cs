@@ -49,6 +49,7 @@ public partial class NewDownloadWindow : Window
 
         TxtUrl.Text = url ?? "";
         Title = url is null ? "Yeni indirme" : "Bağlantı yakalandı";
+        TxtHeading.Text = url is null ? "Yeni bir indirme başlat" : "Yeni bir indirme algılandı";
 
         // Adres ve dosya adi kutulari yalnizca elle indirmede gerekli. Tarayicidan
         // gelen baglantida ikisi de belli; gostermek sadece kalabalik olurdu.
@@ -69,8 +70,8 @@ public partial class NewDownloadWindow : Window
         if (string.IsNullOrWhiteSpace(TxtUrl.Text))
         {
             TxtUrl.Focus();
-            TxtSize.Text = "Bir adres yapıştırın";
-            TxtFileTitle.Text = "—";
+            TxtSize.Text = "—";
+            TxtStatus.Text = "Bir adres yapıştırın.";
             return;
         }
 
@@ -90,14 +91,13 @@ public partial class NewDownloadWindow : Window
         }
 
         TxtStatus.Text = "";
+        TxtSource.Text = Uri.TryCreate(url, UriKind.Absolute, out var host) ? host.Host : "—";
 
         _probeCts?.Cancel();
         _probeCts = new CancellationTokenSource();
         var ct = _probeCts.Token;
 
-        var host = Uri.TryCreate(url, UriKind.Absolute, out var u) ? u.Host : "";
-
-        TxtSize.Text = "Boyut sorgulanıyor…";
+        TxtSize.Text = "sorgulanıyor…";
         SetFileName(UrlHelper.GuessFileName(url));
 
         var info = await RemoteProbe.ProbeAsync(url, ct);
@@ -108,9 +108,8 @@ public partial class NewDownloadWindow : Window
         var hintHasExtension = Path.HasExtension(_fileName);
         if (!hintHasExtension && Path.HasExtension(info.FileName)) SetFileName(info.FileName, force: true);
         else SetFileName(info.FileName);
-        TxtSize.Text = info.Size > 0
-            ? Format.Bytes(info.Size) + (host.Length > 0 ? "  ·  " + host : "")
-            : (host.Length > 0 ? "Boyut bilinmiyor  ·  " + host : "Boyut bilinmiyor");
+
+        TxtSize.Text = info.Size > 0 ? Format.Bytes(info.Size) : "bilinmiyor";
 
         if (info.Size > 0 && !info.Resumable)
             TxtStatus.Text = "Sunucu parçalı indirmeyi desteklemiyor.";
@@ -128,16 +127,14 @@ public partial class NewDownloadWindow : Window
             _loading = suppress;
         }
 
-        TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
-        IcoFile.Text = Icons.ForFile(_fileName);
+        TxtKind.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : Icons.KindOf(_fileName);
     }
 
     private void TxtFileName_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (!_loading) _userEditedFileName = true;
         _fileName = TxtFileName.Text.Trim();
-        TxtFileTitle.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : _fileName;
-        IcoFile.Text = Icons.ForFile(_fileName);
+        TxtKind.Text = string.IsNullOrWhiteSpace(_fileName) ? "—" : Icons.KindOf(_fileName);
     }
 
     private async void TxtUrl_TextChanged(object sender, TextChangedEventArgs e)

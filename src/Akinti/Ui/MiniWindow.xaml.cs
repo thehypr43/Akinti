@@ -86,9 +86,6 @@ public partial class MiniWindow : Window
             _watch.Restart();
         }
 
-        TxtName.Text = item.DisplayName;
-        IcoFile.Text = Icons.ForFile(item.FilePath ?? item.DisplayName);
-
         Bar.Value = item.Progress * 100;
 
         var host = string.IsNullOrEmpty(item.SourceUri) ? ""
@@ -107,44 +104,45 @@ public partial class MiniWindow : Window
         }
 
         var paused = item.Status == Aria2Status.Paused;
-        TxtPct.Text = $"{(int)(item.Progress * 100)}%";
+
+        // Tasarimin basligi: "%64 · 1 dk 12 sn kaldi"
+        var pct = $"%{(int)(item.Progress * 100)}";
+        TxtHeadline.Text = paused
+            ? pct + "  ·  duraklatıldı"
+            : item.Eta is { } eta ? $"{pct}  ·  {Format.Duration(eta)} kaldı" : pct;
+
+        TxtName.Text = item.DisplayName;
 
         TxtMeta.Text = item.TotalLength > 0
             ? $"{Format.Bytes(item.CompletedLength)} / {Format.Bytes(item.TotalLength)}"
-              + (host.Length > 0 ? "  ·  " + host : "")
-            : host;
-
-        TxtParts.Text = item.Connections > 0 ? item.Connections.ToString() : "—";
-        TxtRemaining.Text = item.TotalLength > item.CompletedLength
-            ? Format.Bytes(item.TotalLength - item.CompletedLength) : "—";
+            : Format.Bytes(item.CompletedLength);
         TxtSpeed.Text = item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";
-        TxtEta.Text = item.Eta is { } eta ? Format.Duration(eta) + " kaldı" : "—";
 
-        IcoToggle.Text = paused ? "" : "";
+        TxtParts.Text = item.Connections > 0 ? item.Connections + " bölüm" : "—";
+        TxtElapsed.Text = _sawFromStart ? _watch.Elapsed.ToString(@"mm\:ss") : "—";
+        TxtHost.Text = host.Length > 0 ? host : "—";
+        TxtFolder.Text = string.IsNullOrEmpty(item.Dir) ? "—" : Path.GetFileName(item.Dir.TrimEnd('\\', '/'));
+
+        IcoToggle.Text = paused ? "\uE768" : "\uE769";
+        TxtToggle.Text = paused ? "Devam et" : "Duraklat";
+        Title = paused ? "Duraklatıldı" : "İndiriliyor";
 
         _ = UpdateCountsAsync(paused);
     }
 
     /// <summary>Bu pencere tek indirmeyi gosterir; arkada baskalari varsa
-    /// hem baslik hem alt satir bunu soylesin.</summary>
+    /// alt satir bunu soylesin.</summary>
     private async Task UpdateCountsAsync(bool paused)
     {
         if (_client is null) return;
         try
         {
             var stat = await _client.GetGlobalStatAsync();
-
-            Title = paused ? "Duraklatıldı"
-                : stat.NumActive > 1 ? $"{stat.NumActive} indirme sürüyor"
-                : "İndiriliyor";
-
-            TxtNote.Text = stat.NumWaiting > 0 ? $"{stat.NumWaiting} indirme sırada" : "Kuyruk boş";
+            var others = stat.NumActive - 1;
+            TxtNote.Text = others > 0 ? $"{others} indirme daha sürüyor"
+                : stat.NumWaiting > 0 ? $"{stat.NumWaiting} indirme sırada" : "";
         }
-        catch
-        {
-            Title = paused ? "Duraklatıldı" : "İndiriliyor";
-            TxtNote.Text = "";
-        }
+        catch { TxtNote.Text = ""; }
     }
 
     /// <summary>Ilerleme penceresini kapatip sonuc penceresini acar.

@@ -18,10 +18,6 @@ public static class ThemeManager
 {
     private const string PersonalizeKey =
         @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
-    private const string DwmKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM";
-
-    /// <summary>Windows varsayilan vurgusu; kayit okunamazsa bu kullanilir.</summary>
-    private static readonly Color FallbackAccent = Color.FromRgb(0x00, 0x78, 0xD4);
 
     private static ResourceDictionary? _current;
 
@@ -45,7 +41,7 @@ public static class ThemeManager
         var app = Application.Current;
         if (app is null) return;
 
-        var dict = Build(ReadIsLight(), ReadAccent());
+        var dict = Build(ReadIsLight(), default);
 
         if (_current is not null) app.Resources.MergedDictionaries.Remove(_current);
         // Palet en sona eklenir: ayni anahtar birden fazla sozlukte varsa
@@ -69,86 +65,93 @@ public static class ThemeManager
         return IsLight;
     }
 
-    private static Color ReadAccent()
-    {
-        // DWM\AccentColor ABGR duzeninde bir DWORD tutuyor.
-        if (Registry.GetValue(DwmKey, "AccentColor", null) is int abgr)
-        {
-            var r = (byte)(abgr & 0xFF);
-            var g = (byte)((abgr >> 8) & 0xFF);
-            var b = (byte)((abgr >> 16) & 0xFF);
-            if (r + g + b > 0) return Color.FromRgb(r, g, b);
-        }
-        return FallbackAccent;
-    }
-
     // ──────────── Palet ────────────
 
+    /// <summary>
+    /// Palet, Claude Design'daki "Fluent İndirme Yöneticisi" dosyasindan birebir
+    /// aliniyor. Vurgu rengi de tasarimin kendi rengi: Windows'un vurgu rengi
+    /// mor/pembe secilmis olabiliyor ve tasarimin mavisiyle cakisıyordu. Acik/koyu
+    /// secimi yine Windows'tan geliyor.
+    /// </summary>
     private static ResourceDictionary Build(bool light, Color systemAccent)
     {
-        // Vurgu rengi olduğu gibi kullanilamaz: koyu zeminde Windows kendi
-        // vurgusunun acik tonunu, acik zeminde koyu tonunu kullaniyor.
-        var accent = WithLightness(systemAccent, light ? 0.36 : 0.66);
-        var accent2 = WithLightness(systemAccent, light ? 0.46 : 0.76);
-
-        var text = light ? Color.FromRgb(0x1A, 0x1A, 0x1A) : Colors.White;
-        var onSurface = light ? Colors.Black : Colors.White;
-
         var d = new ResourceDictionary();
 
         void C(string key, Color c) => d[key] = c;
         void B(string key, Color c) => d[key] = Frozen(c);
         void Alpha(string key, Color c, double a) => d[key] = Frozen(WithAlpha(c, a));
 
-        // --- Zeminler ---
-        var page = light ? Rgb(0xF3F3F3) : Rgb(0x1B1B1B);
-        var bg = light ? Rgb(0xF9F9F9) : Rgb(0x202020);
-        var surface = light ? Rgb(0xFFFFFF) : Rgb(0x2B2B2B);
+        // --- Tasarim belirteçleri ---
+        var accent     = light ? Rgb(0x0F6CBD) : Rgb(0x4CC2FF);   // --accent
+        var accentInk  = light ? Colors.White  : Rgb(0x00243B);   // --accentink
+        var desk       = light ? Rgb(0xECEFF3) : Rgb(0x171717);   // --desk
+        var card       = light ? Rgb(0xFFFFFF) : Rgb(0x2D2D2D);   // --card
+        var ink        = light ? Rgb(0x191919) : Rgb(0xFFFFFF);   // --ink
+        var ink2       = light ? Rgb(0x5C5C5C) : Rgb(0xC5C5C5);   // --ink2
+        var ink3       = light ? Rgb(0x8A8A8A) : Rgb(0x909090);   // --ink3
+        var ok         = light ? Rgb(0x0F7B0F) : Rgb(0x6CCB5F);   // --ok
+        var err        = light ? Rgb(0xC42B1C) : Rgb(0xFF99A4);   // --err
+        var warn       = light ? Rgb(0x9D5D00) : Rgb(0xFCE100);   // --warn
+        var onSurface  = light ? Colors.Black  : Colors.White;
 
-        C("C.Page", page); C("C.Bg", bg); C("C.Surface", surface);
-        C("C.Text", text); C("C.Accent", accent); C("C.Accent2", accent2);
-        C("C.Danger", light ? Rgb(0xC42B1C) : Rgb(0xFF99A4));
-        C("C.Success", light ? Rgb(0x0F7B0F) : Rgb(0x6CCB5F));
-        C("C.Neutral100", text);
-        C("C.Neutral700", light ? Rgb(0x8A8A8A) : Rgb(0x6E6E6E));
+        C("C.Page", desk); C("C.Bg", desk); C("C.Surface", card);
+        C("C.Text", ink); C("C.Accent", accent); C("C.Accent2", accent);
+        C("C.Danger", err); C("C.Success", ok);
+        C("C.Neutral100", ink);
+        C("C.Neutral700", ink3);
         C("C.Neutral800", light ? Rgb(0xD6D6D6) : Rgb(0x3A3A3A));
 
-        B("B.Page", page);
-        B("B.Bg", bg);
-        B("B.Surface", surface);
-        B("B.Text", text);
+        // --mica: pencere zemini duz renk degil, hafif bir degrade.
+        var mica = new LinearGradientBrush
+        {
+            StartPoint = new System.Windows.Point(0, 0),
+            EndPoint = new System.Windows.Point(1, 1),
+            GradientStops =
+            {
+                new GradientStop(light ? Rgb(0xF7F8FA) : Rgb(0x2A2A2E), 0.00),
+                new GradientStop(light ? Rgb(0xEEF1F6) : Rgb(0x232326), 0.55),
+                new GradientStop(light ? Rgb(0xF2F0F5) : Rgb(0x272429), 1.00),
+            },
+        };
+        mica.Freeze();
+        d["B.Mica"] = mica;
+
+        B("B.Page", desk);
+        B("B.Bg", desk);
+        B("B.Surface", card);
+        B("B.Text", ink);
+        B("B.TextMuted", ink2);
+        B("B.TextDim", ink2);
+        B("B.TextFaint", ink3);
         B("B.Accent", accent);
-        B("B.Accent2", accent2);
-        B("B.Danger", (Color)d["C.Danger"]);
-        B("B.Success", (Color)d["C.Success"]);
+        B("B.Accent2", accent);
+        B("B.AccentText", accentInk);
+        B("B.Danger", err);
+        B("B.Success", ok);
+        B("B.Warn", warn);
 
-        // --- Cizgiler ve kenarliklar (Win11: metin renginin dusuk alfasi) ---
-        Alpha("B.Neutral800", onSurface, light ? 0.09 : 0.10);   // kart cercevesi
-        Alpha("B.Neutral700", onSurface, light ? 0.16 : 0.18);
-        Alpha("B.Divider", onSurface, light ? 0.08 : 0.09);
-        Alpha("B.ControlStroke", onSurface, light ? 0.11 : 0.09);
-        B("B.ControlFill", light ? Rgb(0xFDFDFD) : Rgb(0x2F2F2F));
+        // --- Katmanlar ve cizgiler ---
+        Alpha("B.Card2", Colors.White, light ? 0.55 : 0.04);          // --card2
+        Alpha("B.Layer", Colors.White, light ? 0.70 : 0.045);         // --layer
+        Alpha("B.Neutral800", onSurface, 0.075);                      // --stroke
+        Alpha("B.Neutral700", onSurface, 0.12);                       // --stroke2
+        Alpha("B.ControlStroke", onSurface, 0.12);                    // --stroke2
+        Alpha("B.Divider", onSurface, light ? 0.055 : 0.06);          // --divider
+        Alpha("B.TrackDim", onSurface, light ? 0.09 : 0.14);          // --track
+        B("B.ControlFill", card);
 
-        // --- Metin katmanlari ---
-        Alpha("B.TextMuted", onSurface, light ? 0.72 : 0.78);
-        Alpha("B.TextDim", onSurface, light ? 0.62 : 0.68);
-        Alpha("B.TextFaint", onSurface, light ? 0.55 : 0.58);
-
-        // --- Uzerine gelme ---
-        Alpha("B.HoverText", onSurface, light ? 0.055 : 0.08);
-        Alpha("B.HoverSubtle", onSurface, light ? 0.035 : 0.05);
-        Alpha("B.ZebraFill", onSurface, light ? 0.025 : 0.035);
+        // --- Etkilesim ---
+        Alpha("B.HoverText", onSurface, light ? 0.037 : 0.055);       // --hover
+        Alpha("B.HoverSubtle", onSurface, light ? 0.028 : 0.04);
+        Alpha("B.ZebraFill", onSurface, light ? 0.02 : 0.03);
+        Alpha("B.Press", onSurface, light ? 0.06 : 0.09);             // --press
         Alpha("B.InputHover", onSurface, light ? 0.30 : 0.36);
-        Alpha("B.TrackDim", onSurface, light ? 0.14 : 0.16);
 
         Alpha("B.HoverAccent", accent, 0.14);
         Alpha("B.GhostHover", accent, 0.10);
         Alpha("B.SparkFill", accent, 0.20);
-        Alpha("B.AccentSubtle", accent, light ? 0.10 : 0.16);
-        Alpha("B.DangerHover", (Color)d["C.Danger"], light ? 0.16 : 0.28);
-
-        // Vurgu dolgusu uzerindeki yazi: koyu temada vurgu acik oldugu icin siyah.
-        B("B.AccentText", light ? Colors.White : Colors.Black);
+        Alpha("B.AccentSubtle", accent, light ? 0.12 : 0.18);
+        Alpha("B.DangerHover", err, light ? 0.14 : 0.26);
 
         return d;
     }
@@ -168,43 +171,4 @@ public static class ThemeManager
         return b;
     }
 
-    /// <summary>Rengin tonunu ve doygunlugunu koruyup parlakligini hedefe tasir.</summary>
-    private static Color WithLightness(Color c, double targetL)
-    {
-        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
-        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
-        double l = (max + min) / 2, h = 0, s = 0;
-
-        if (max > min)
-        {
-            var delta = max - min;
-            s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-            if (max == r) h = (g - b) / delta + (g < b ? 6 : 0);
-            else if (max == g) h = (b - r) / delta + 2;
-            else h = (r - g) / delta + 4;
-            h /= 6;
-        }
-
-        // Cok soluk bir vurgu rengi koyu zeminde kayboluyor; taban doygunlugu ver.
-        s = Math.Max(s, 0.35);
-        l = Math.Clamp(targetL, 0, 1);
-
-        if (s == 0) return Color.FromRgb((byte)(l * 255), (byte)(l * 255), (byte)(l * 255));
-
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
-        return Color.FromRgb(To(Hue(p, q, h + 1.0 / 3)), To(Hue(p, q, h)), To(Hue(p, q, h - 1.0 / 3)));
-
-        static byte To(double v) => (byte)Math.Round(Math.Clamp(v, 0, 1) * 255);
-
-        static double Hue(double p, double q, double t)
-        {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1.0 / 6) return p + (q - p) * 6 * t;
-            if (t < 1.0 / 2) return q;
-            if (t < 2.0 / 3) return p + (q - p) * (2.0 / 3 - t) * 6;
-            return p;
-        }
-    }
 }

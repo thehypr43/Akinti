@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Akıntı" Height="660" Width="1040" MinHeight="460" MinWidth="880"
         Icon="/akinti.ico"
-        Background="{DynamicResource B.Bg}"
+        Background="{DynamicResource B.Mica}"
         WindowStartupLocation="CenterScreen"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
@@ -12,12 +12,12 @@
         <!-- ═══════════════ Govde ═══════════════ -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="186" />
+                <ColumnDefinition Width="250" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <!-- ─────── Kenar cubugu ─────── -->
-            <DockPanel Grid.Column="0" Margin="14,12,8,14">
+            <DockPanel Grid.Column="0" Margin="8,12,6,8">
 
                 <Button DockPanel.Dock="Top" Style="{StaticResource Btn.Primary}"
                         Click="BtnNew_Click" Padding="10,8" HorizontalContentAlignment="Center">
@@ -97,15 +97,19 @@
 
                 <!-- Alt bilgi karti: disk ve hiz siniri -->
                 <StackPanel DockPanel.Dock="Bottom">
-                    <Grid Margin="10,0,4,7">
+                  <Border Background="{DynamicResource B.Card2}"
+                          BorderBrush="{DynamicResource B.Neutral800}" BorderThickness="1"
+                          CornerRadius="{StaticResource R.Md}" Padding="14">
+                   <StackPanel>
+                    <Grid Margin="0,0,0,9">
                         <TextBlock x:Name="TxtDiskName" Text="Downloads" Style="{StaticResource T.Meta}" />
                         <TextBlock x:Name="TxtDiskFree" Text="—" Style="{StaticResource T.Meta}"
                                    HorizontalAlignment="Right" />
                     </Grid>
-                    <ProgressBar x:Name="BarDisk" Style="{StaticResource Bar.Disk}" Margin="10,0,4,0"
+                    <ProgressBar x:Name="BarDisk" Style="{StaticResource Bar.Disk}"
                                  Maximum="100" Value="0" />
-                    <Rectangle Style="{StaticResource Hr}" Margin="6,12" />
-                    <StackPanel Orientation="Horizontal" Margin="10,0,4,0">
+                    <Rectangle Style="{StaticResource Hr}" Margin="0,11" />
+                    <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE945;" FontFamily="{StaticResource F.Icon}" FontSize="12"
                                    Foreground="{DynamicResource B.TextFaint}" VerticalAlignment="Center" />
                         <TextBlock Text="Hız sınırı" Margin="7,0,0,0" Style="{StaticResource T.Meta}"
@@ -114,13 +118,15 @@
                                    Foreground="{DynamicResource B.Accent}" VerticalAlignment="Center"
                                    HorizontalAlignment="Right" Margin="10,0,0,0" />
                     </StackPanel>
+                   </StackPanel>
+                  </Border>
                 </StackPanel>
 
                 <Grid />
             </DockPanel>
 
             <!-- ─────── Ana bolum ─────── -->
-            <DockPanel Grid.Column="1" Margin="6,12,14,0">
+            <DockPanel Grid.Column="1" Margin="8,12,8,0">
 
                 <!-- Baglanti yapistirma cubugu -->
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,18">
@@ -131,8 +137,8 @@
                     </Grid.ColumnDefinitions>
 
                     <Border Grid.Column="0" Background="{DynamicResource B.Surface}"
-                            BorderBrush="{DynamicResource B.Divider}" BorderThickness="1"
-                            CornerRadius="{StaticResource R.Md}" MinHeight="38">
+                            BorderBrush="{DynamicResource B.ControlStroke}" BorderThickness="1"
+                            CornerRadius="{StaticResource R.Ctl}" MinHeight="32">
                         <Grid Margin="12,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -181,11 +187,14 @@
                 </Grid>
 
                 <!-- Durum satiri (en alt) -->
-                <Grid DockPanel.Dock="Bottom" Margin="0,10,0,12">
-                    <TextBlock x:Name="TxtStatusLeft" Style="{StaticResource T.Meta}" />
-                    <TextBlock x:Name="TxtStatusRight" Style="{StaticResource T.Meta}"
-                               HorizontalAlignment="Right" />
-                </Grid>
+                <Border DockPanel.Dock="Bottom" Height="38" Margin="0,6,0,0"
+                        BorderBrush="{DynamicResource B.Divider}" BorderThickness="0,1,0,0">
+                    <Grid VerticalAlignment="Center" Margin="12,0">
+                        <TextBlock x:Name="TxtStatusLeft" Style="{StaticResource T.Meta}" />
+                        <TextBlock x:Name="TxtStatusRight" Style="{StaticResource T.Meta}"
+                                   HorizontalAlignment="Right" />
+                    </Grid>
+                </Border>
 
                 <!-- Bolum basligi + toplam hiz + hiz grafigi -->
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
@@ -242,16 +251,19 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="ListBoxItem">
                                         <Border x:Name="bd" Background="Transparent"
-                                                CornerRadius="{StaticResource R.Md}" Padding="8,9">
+                                                BorderBrush="Transparent" BorderThickness="1"
+                                                CornerRadius="{StaticResource R.Md}" Padding="12">
                                             <ContentPresenter />
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource B.ZebraFill}" />
+                                                <Setter TargetName="bd" Property="Background" Value="{DynamicResource B.HoverSubtle}" />
                                             </Trigger>
                                             <Trigger Property="IsSelected" Value="True">
                                                 <Setter TargetName="bd" Property="Background"
                                                         Value="{DynamicResource B.Surface}" />
+                                                <Setter TargetName="bd" Property="BorderBrush"
+                                                        Value="{DynamicResource B.Neutral800}" />
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -262,31 +274,26 @@
 
                     <ListBox.ItemTemplate>
                         <DataTemplate>
+                            <!-- Tasarimdaki satir duzeni: dosya karesi | ad+bilgi | ilerleme | eylemler -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="44" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="190" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <!-- Dosya turu karesi -->
-                                <Border Grid.Column="0" Style="{StaticResource FileTile}" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding IconGlyph}" Style="{StaticResource T.Icon}"
-                                               FontSize="15" Foreground="{DynamicResource B.TextMuted}" />
+                                <!-- Dosya turu karesi: ikon degil, uzanti yazisi -->
+                                <Border Grid.Column="0" Style="{StaticResource FileTile}"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding KindShort}" Style="{StaticResource T.FileKind}" />
                                 </Border>
 
-                                <!-- Ad, ilerleme, ust veri -->
-                                <Grid Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-
-                                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Name}" FontSize="14"
-                                                   TextTrimming="CharacterEllipsis" MaxWidth="430"
+                                <!-- Ad + tek satirlik bilgi -->
+                                <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="360"
                                                    VerticalAlignment="Center" />
                                         <Border Style="{StaticResource Tag}" Margin="9,0,0,0"
                                                 Background="{Binding TagBackground}">
@@ -295,48 +302,38 @@
                                                        Foreground="{Binding TagForeground}" />
                                         </Border>
                                     </StackPanel>
+                                    <TextBlock Text="{Binding MetaText}" Style="{StaticResource T.Meta}"
+                                               Margin="0,5,0,0" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
 
-                                    <Grid Grid.Row="1" Margin="0,8,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <ProgressBar Grid.Column="0" Style="{StaticResource Bar}"
-                                                     Maximum="100" Value="{Binding Percent, Mode=OneWay}"
-                                                     Foreground="{Binding BarBrush}"
-                                                     VerticalAlignment="Center" />
-                                        <TextBlock Grid.Column="1" Text="{Binding PercentText}"
-                                                   Style="{StaticResource T.Meta}" Margin="12,0,0,0"
-                                                   MinWidth="34" TextAlignment="Right" />
+                                <!-- Ilerleme: cubuk, altinda yuzde ve bolum sayisi -->
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <ProgressBar Style="{StaticResource Bar}"
+                                                 Maximum="100" Value="{Binding Percent, Mode=OneWay}"
+                                                 Foreground="{Binding BarBrush}" />
+                                    <Grid Margin="0,7,0,0">
+                                        <TextBlock Text="{Binding PercentText}" FontSize="11"
+                                                   Foreground="{DynamicResource B.TextMuted}" />
+                                        <TextBlock Text="{Binding PartsText}" FontSize="11"
+                                                   HorizontalAlignment="Right"
+                                                   Foreground="{DynamicResource B.TextFaint}" />
                                     </Grid>
-
-                                    <TextBlock Grid.Row="2" Text="{Binding MetaText}"
-                                               Style="{StaticResource T.Meta}" Margin="0,7,0,0"
-                                               TextTrimming="CharacterEllipsis" />
-                                </Grid>
-
-                                <!-- Hiz ve kalan sure -->
-                                <StackPanel Grid.Column="2" VerticalAlignment="Center"
-                                            HorizontalAlignment="Right" MinWidth="92" Margin="0,0,10,0">
-                                    <TextBlock Text="{Binding SpeedText}" FontSize="14" FontWeight="Medium"
-                                               HorizontalAlignment="Right" />
-                                    <TextBlock Text="{Binding EtaText}" Style="{StaticResource T.Meta}"
-                                               HorizontalAlignment="Right" Margin="0,2,0,0" />
                                 </StackPanel>
 
                                 <!-- Satir eylemleri -->
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Button Style="{StaticResource Btn.Icon}" Click="RowToggle_Click"
-                                            Tag="{Binding}" Visibility="{Binding ToggleVisibility}">
+                                            Tag="{Binding}" Visibility="{Binding ToggleVisibility}"
+                                            Margin="0,0,4,0">
                                         <TextBlock Text="{Binding ToggleGlyph}"
-                                                   FontFamily="{StaticResource F.Icon}" FontSize="13"
+                                                   FontFamily="{StaticResource F.Icon}" FontSize="12"
                                                    Foreground="{Binding Foreground,
                                                                 RelativeSource={RelativeSource AncestorType=Button}}" />
                                     </Button>
                                     <Button Style="{StaticResource Btn.Icon}" Click="RowRemove_Click"
                                             Tag="{Binding}">
                                         <TextBlock Text="&#xE711;" FontFamily="{StaticResource F.Icon}"
-                                                   FontSize="13"
+                                                   FontSize="12"
                                                    Foreground="{Binding Foreground,
                                                                 RelativeSource={RelativeSource AncestorType=Button}}" />
                                     </Button>

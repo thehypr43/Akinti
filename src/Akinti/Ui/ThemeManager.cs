@@ -99,12 +99,13 @@ public static class ThemeManager
         void Alpha(string key, Color c, double a) => d[key] = Frozen(WithAlpha(c, a));
 
         // --- Tasarim belirteçleri ---
+        // Koyu temada vurgu, aydinlik bir tonda birakilip uzerine siyah yazi
+        // yazilabilirdi; ama acik mavi zeminde siyah yazi cirkin duruyor. Bunun
+        // yerine dolgu biraz koyulasiyor ve yazi iki temada da beyaz kaliyor.
         var accent = systemAccent is { } sys
-            ? WithLightness(sys, light ? 0.36 : 0.66)
-            : (light ? Rgb(0x0F6CBD) : Rgb(0x4CC2FF));            // --accent
-        // Vurgu zeminin uzerindeki yazi: acik temada beyaz, koyu temada ayni
-        // rengin cok karanlik hali - boylece dolu dugmede kontrast hep yeterli.
-        var accentInk  = light ? Colors.White : WithLightness(accent, 0.12);
+            ? WithLightness(sys, light ? 0.36 : 0.50)
+            : (light ? Rgb(0x0F6CBD) : Rgb(0x3A8FC4));            // --accent
+        var accentInk  = Colors.White;
         var desk       = light ? Rgb(0xECEFF3) : Rgb(0x171717);   // --desk
         var card       = light ? Rgb(0xFFFFFF) : Rgb(0x2D2D2D);   // --card
         var ink        = light ? Rgb(0x191919) : Rgb(0xFFFFFF);   // --ink

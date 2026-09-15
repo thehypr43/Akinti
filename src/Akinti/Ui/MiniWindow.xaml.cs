@@ -86,11 +86,6 @@ public partial class MiniWindow : Window
             _watch.Restart();
         }
 
-        Bar.Value = item.Progress * 100;
-
-        var host = string.IsNullOrEmpty(item.SourceUri) ? ""
-            : Uri.TryCreate(item.SourceUri, UriKind.Absolute, out var u) ? u.Host : "";
-
         switch (item.Status)
         {
             case Aria2Status.Complete:
@@ -105,29 +100,35 @@ public partial class MiniWindow : Window
 
         var paused = item.Status == Aria2Status.Paused;
 
-        // Tasarimin basligi: "%64 · 1 dk 12 sn kaldi"
-        var pct = $"%{(int)(item.Progress * 100)}";
-        TxtHeadline.Text = paused
-            ? pct + "  ·  duraklatıldı"
-            : item.Eta is { } eta ? $"{pct}  ·  {Format.Duration(eta)} kaldı" : pct;
-
+        Bar.Value = item.Progress * 100;
+        TxtPct.Text = "%" + (int)(item.Progress * 100);
         TxtName.Text = item.DisplayName;
+        TxtKind.Text = KindShort(item.DisplayName);
 
         TxtMeta.Text = item.TotalLength > 0
             ? $"{Format.Bytes(item.CompletedLength)} / {Format.Bytes(item.TotalLength)}"
             : Format.Bytes(item.CompletedLength);
-        TxtSpeed.Text = item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";
 
-        TxtParts.Text = item.Connections > 0 ? item.Connections + " bölüm" : "—";
-        TxtElapsed.Text = _sawFromStart ? _watch.Elapsed.ToString(@"mm\:ss") : "—";
-        TxtHost.Text = host.Length > 0 ? host : "—";
-        TxtFolder.Text = string.IsNullOrEmpty(item.Dir) ? "—" : Path.GetFileName(item.Dir.TrimEnd('\\', '/'));
+        TxtSpeed.Text = paused ? "duraklatıldı"
+            : item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";
+        TxtEta.Text = !paused && item.Eta is { } eta ? Format.Duration(eta) : "—";
+        TxtRemaining.Text = item.TotalLength > item.CompletedLength
+            ? Format.Bytes(item.TotalLength - item.CompletedLength) : "—";
+        TxtParts.Text = item.Connections > 0 ? item.Connections.ToString() : "—";
 
-        IcoToggle.Text = paused ? "\uE768" : "\uE769";
+        IcoToggle.Text = paused ? "" : "";
         TxtToggle.Text = paused ? "Devam et" : "Duraklat";
         Title = paused ? "Duraklatıldı" : "İndiriliyor";
 
         _ = UpdateCountsAsync(paused);
+    }
+
+    /// <summary>Dosya karesindeki uzanti yazisi.</summary>
+    private static string KindShort(string nameOrPath)
+    {
+        var ext = Path.GetExtension(nameOrPath).TrimStart('.');
+        if (ext.Length == 0) return "DSY";
+        return (ext.Length > 4 ? ext[..4] : ext).ToUpperInvariant();
     }
 
     /// <summary>Bu pencere tek indirmeyi gosterir; arkada baskalari varsa

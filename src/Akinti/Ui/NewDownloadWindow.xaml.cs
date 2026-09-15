@@ -112,7 +112,14 @@ public partial class NewDownloadWindow : Window
         TxtSize.Text = "sorgulanıyor…";
         SetFileName(UrlHelper.GuessFileName(url));
 
-        var info = await RemoteProbe.ProbeAsync(url, ct);
+        // Cerez ve Referer'i yoklamaya da ver: onsuz bircok site dosya yerine
+        // giris sayfasi donuyor, ad da adresteki rastgele belirtece dusuyordu.
+        var info = await RemoteProbe.ProbeAsync(url, new RemoteProbe.Context
+        {
+            Cookie = _cookie,
+            Referrer = _referrer,
+            UserAgent = _userAgent,
+        }, ct);
         if (ct.IsCancellationRequested) return;
 
         // Tarayicinin verdigi ad uzantisizsa (Chrome bazen adresi GUID olan

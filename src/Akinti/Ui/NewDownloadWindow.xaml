@@ -16,8 +16,6 @@
     <StackPanel Margin="22,10,22,22">
 
         <!-- ═══ Başlık ═══ -->
-        <!-- Yatay StackPanel cocuklarina sinirsiz genislik verdigi icin aciklama
-             sarilmayip kenardan tasiyordu; Grid gercek bir sutun genisligi veriyor. -->
         <Grid Margin="0,0,0,18">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -34,8 +32,6 @@
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
                 <TextBlock x:Name="TxtHeading" Text="Yeni bir indirme algılandı"
                            Style="{StaticResource T.H5}" TextWrapping="Wrap" />
-                <TextBlock Text="Tarayıcıdan gelen bağlantıyı bu yöneticiyle indirebilirsin."
-                           Style="{StaticResource T.Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
             </StackPanel>
         </Grid>
 

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -72,43 +73,135 @@ public sealed class RemoteFileInfo
 public static class RemoteProbe
 {
     /// <summary>
+    /// Yoklamanin tarayicidan devraldigi kimlik. Cerez ve Referer olmadan bircok
+    /// site dosya yerine giris sayfasi donuyor; o zaman Content-Disposition da
+    /// gelmiyor ve ad adresteki rastgele belirtece dusuyordu.
+    /// </summary>
+    public sealed class Context
+    {
+        public string? Cookie { get; init; }
+        public string? Referrer { get; init; }
+        public string? UserAgent { get; init; }
+    }
+
+    private static readonly Dictionary<string, string> ExtByType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["application/zip"] = ".zip",
+        ["application/x-zip-compressed"] = ".zip",
+        ["application/x-rar-compressed"] = ".rar",
+        ["application/vnd.rar"] = ".rar",
+        ["application/x-7z-compressed"] = ".7z",
+        ["application/gzip"] = ".gz",
+        ["application/x-msdownload"] = ".exe",
+        ["application/x-msi"] = ".msi",
+        ["application/vnd.microsoft.portable-executable"] = ".exe",
+        ["application/pdf"] = ".pdf",
+        ["application/epub+zip"] = ".epub",
+        ["application/json"] = ".json",
+        ["video/mp4"] = ".mp4",
+        ["video/x-matroska"] = ".mkv",
+        ["video/webm"] = ".webm",
+        ["audio/mpeg"] = ".mp3",
+        ["audio/flac"] = ".flac",
+        ["audio/ogg"] = ".ogg",
+        ["image/jpeg"] = ".jpg",
+        ["image/png"] = ".png",
+        ["image/gif"] = ".gif",
+        ["image/webp"] = ".webp",
+        ["text/plain"] = ".txt",
+    };
+
+    /// <summary>
     /// Diyalogda dosya adi ve boyutu gosterebilmek icin hafif bir yoklama.
     /// Basarisiz olursa URL tahminine duser, asla istisna firlatmaz.
     /// </summary>
-    public static async Task<RemoteFileInfo> ProbeAsync(string url, CancellationToken ct = default)
+    public static async Task<RemoteFileInfo> ProbeAsync(string url, Context? ctx = null,
+                                                        CancellationToken ct = default)
     {
         var fallback = new RemoteFileInfo { FileName = UrlHelper.GuessFileName(url) };
         if (!UrlHelper.IsSupportedScheme(url)) return fallback;
 
         try
         {
-            using var handler = new HttpClientHandler { AllowAutoRedirect = true, MaxAutomaticRedirections = 10 };
-            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 Akinti/1.0");
-
-            using var req = new HttpRequestMessage(HttpMethod.Head, url);
-            using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)
-                                       .ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) return fallback;
-
-            var name = resp.Content.Headers.ContentDisposition?.FileNameStar
-                       ?? resp.Content.Headers.ContentDisposition?.FileName;
-            name = string.IsNullOrWhiteSpace(name)
-                ? UrlHelper.GuessFileName(resp.RequestMessage?.RequestUri?.ToString() ?? url)
-                : UrlHelper.Sanitize(name.Trim('"'));
-
-            return new RemoteFileInfo
+            using var handler = new HttpClientHandler
             {
-                FileName = name,
-                Size = resp.Content.Headers.ContentLength ?? 0,
-                Resumable = resp.Headers.AcceptRanges.Contains("bytes"),
-                ContentType = resp.Content.Headers.ContentType?.MediaType,
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 10,
+                UseCookies = false,   // cerez basligini biz koyuyoruz
             };
+            using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(8) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(
+                string.IsNullOrWhiteSpace(ctx?.UserAgent) ? "Mozilla/5.0 Akinti/1.0" : ctx!.UserAgent!);
+            if (!string.IsNullOrWhiteSpace(ctx?.Cookie))
+                http.DefaultRequestHeaders.TryAddWithoutValidation("Cookie", ctx!.Cookie);
+            if (!string.IsNullOrWhiteSpace(ctx?.Referrer))
+                http.DefaultRequestHeaders.TryAddWithoutValidation("Referer", ctx!.Referrer);
+
+            var result = await TryAsync(http, HttpMethod.Head, url, ct).ConfigureAwait(false);
+
+            // Bazi sunucular HEAD'i hic kabul etmiyor (405) ya da bos donuyor.
+            // Tek baytlik bir GET ayni basliklari verir, indirmeyi de baslatmaz.
+            if (result is null || (result.Size <= 0 && !Path.HasExtension(result.FileName)))
+            {
+                var ranged = await TryAsync(http, HttpMethod.Get, url, ct, rangeOnly: true).ConfigureAwait(false);
+                if (ranged is not null) result = ranged;
+            }
+
+            return result ?? fallback;
         }
         catch
         {
             return fallback;
         }
+    }
+
+    private static async Task<RemoteFileInfo?> TryAsync(HttpClient http, HttpMethod method, string url,
+                                                        CancellationToken ct, bool rangeOnly = false)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(method, url);
+            if (rangeOnly) req.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 0);
+
+            using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)
+                                       .ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode) return null;
+
+            var cd = resp.Content.Headers.ContentDisposition;
+            var name = cd?.FileNameStar ?? cd?.FileName;
+            name = string.IsNullOrWhiteSpace(name)
+                ? UrlHelper.GuessFileName(resp.RequestMessage?.RequestUri?.ToString() ?? url)
+                : UrlHelper.Sanitize(name.Trim('"'));
+
+            var type = resp.Content.Headers.ContentType?.MediaType;
+
+            // Tek baytlik istekte ContentLength 1 olur; gercek boyut Content-Range'de.
+            var size = resp.Content.Headers.ContentLength ?? 0;
+            var cr = resp.Content.Headers.ContentRange;
+            if (cr?.Length is { } total && total > 0) size = total;
+
+            return new RemoteFileInfo
+            {
+                FileName = WithExtension(name, type),
+                Size = size,
+                Resumable = resp.Headers.AcceptRanges.Contains("bytes") || cr is not null,
+                ContentType = type,
+            };
+        }
+        catch { return null; }
+    }
+
+    /// <summary>
+    /// Adres bir belirtecse (".../8f3a91c2b4") ad uzantisiz kaliyor ve dosya
+    /// Windows'ta hicbir programla acilmiyordu. Sunucunun bildirdigi turden
+    /// dogru uzantiyi ekler.
+    /// </summary>
+    private static string WithExtension(string name, string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name;
+        if (Path.HasExtension(name)) return name;
+        if (contentType is null || !ExtByType.TryGetValue(contentType, out var ext)) return name;
+        return name + ext;
     }
 }
 

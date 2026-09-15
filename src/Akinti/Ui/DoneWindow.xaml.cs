@@ -19,6 +19,9 @@ public partial class DoneWindow : Window
     private readonly string _filePath;
     private string? _extractedDir;
 
+    /// <summary>Cikarma bitince ayni dugme "Klasoru ac" isini ustlenir.</summary>
+    private bool _extractDone;
+
     public DoneWindow(DownloadItem item, TimeSpan? elapsed = null)
     {
         InitializeComponent();
@@ -106,6 +109,15 @@ public partial class DoneWindow : Window
 
     private async void BtnExtract_Click(object sender, RoutedEventArgs e)
     {
+        if (_extractDone)
+        {
+            // Cikarilan klasorun ICINE girilir; dosyayi secip gostermek degil.
+            // OpenFolder klasor yolu verilince klasorun kendisini acar.
+            PostActions.OpenFolder(_extractedDir ?? Path.GetDirectoryName(_filePath) ?? "");
+            Close();
+            return;
+        }
+
         BtnExtract.IsEnabled = false;
         TxtNote.Text = "Çıkarılıyor…";
         try
@@ -114,10 +126,13 @@ public partial class DoneWindow : Window
 
             if (result.Success)
             {
-                // Isini yapan dugme durmasin; nereye cikardigini "Klasorde goster" gosterir.
-                BtnExtract.Visibility = Visibility.Collapsed;
-                TxtNote.Text = "Klasöre çıkarıldı";
+                // Cikarma bittiginde yapilacak tek is kalir: icine bakmak. Dugme
+                // yerinde durup o ise gecer, basildiginda pencere de kapanir.
                 if (!string.IsNullOrEmpty(result.TargetDir)) _extractedDir = result.TargetDir;
+                _extractDone = true;
+                BtnExtract.Content = "Klasörü aç";
+                BtnExtract.IsEnabled = true;
+                TxtNote.Text = "Klasöre çıkarıldı";
             }
             else
             {

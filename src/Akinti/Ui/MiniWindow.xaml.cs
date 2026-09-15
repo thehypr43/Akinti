@@ -31,6 +31,14 @@ public partial class MiniWindow : Window
     private bool _sawFromStart;
     private bool _firstSample = true;
 
+    /// <summary>
+    /// Gosterilen hiz. aria2'nin ham degeri her yoklamada zipliyor; ekrandaki
+    /// rakam da onunla birlikte ziplayinca okunmuyor. Ustel ortalama sayiyi
+    /// yumusatiyor, kalan sure de bundan hesaplaniyor - yoksa "12 sn" ile
+    /// "3 dk" arasinda gidip geliyordu.
+    /// </summary>
+    private double _speedAvg;
+
     public MiniWindow(Config cfg, string gid)
     {
         InitializeComponent();
@@ -39,7 +47,9 @@ public partial class MiniWindow : Window
         _cfg = cfg;
         _gid = gid;
 
-        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
+        // Saniyede dort kez: sayilar akiyormus gibi gorunsun. aria2 yerelde
+        // dinliyor, tellStatus ucuz bir cagri.
+        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(250) };
         _timer.Tick += async (_, _) => await RefreshAsync();
 
         Loaded += OnLoaded;
@@ -100,6 +110,12 @@ public partial class MiniWindow : Window
 
         var paused = item.Status == Aria2Status.Paused;
 
+        _speedAvg = _speedAvg <= 0 ? item.DownloadSpeed : _speedAvg * 0.6 + item.DownloadSpeed * 0.4;
+        var speed = (long)_speedAvg;
+        var eta = speed > 0 && item.TotalLength > item.CompletedLength
+            ? TimeSpan.FromSeconds((item.TotalLength - item.CompletedLength) / (double)speed)
+            : (TimeSpan?)null;
+
         Bar.Value = item.Progress * 100;
         TxtPct.Text = "%" + (int)(item.Progress * 100);
         TxtName.Text = item.DisplayName;
@@ -109,9 +125,8 @@ public partial class MiniWindow : Window
             ? $"{Format.Bytes(item.CompletedLength)} / {Format.Bytes(item.TotalLength)}"
             : Format.Bytes(item.CompletedLength);
 
-        TxtSpeed.Text = paused ? "duraklatıldı"
-            : item.DownloadSpeed > 0 ? Format.Speed(item.DownloadSpeed) : "—";
-        TxtEta.Text = !paused && item.Eta is { } eta ? Format.Duration(eta) : "—";
+        TxtSpeed.Text = paused ? "duraklatıldı" : speed > 0 ? Format.Speed(speed) : "—";
+        TxtEta.Text = !paused && eta is { } left ? Format.Duration(left) : "—";
         TxtRemaining.Text = item.TotalLength > item.CompletedLength
             ? Format.Bytes(item.TotalLength - item.CompletedLength) : "—";
         TxtParts.Text = item.Connections > 0 ? item.Connections.ToString() : "—";

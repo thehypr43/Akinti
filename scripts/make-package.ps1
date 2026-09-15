@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Baska bilgisayarlara goturulecek kurulum paketini hazirlar.
 
@@ -104,12 +104,6 @@ KURULUM
    Chrome eklentiye kendi kimliğini verir; ikinci çalıştırma o kimliği okuyup
    masaüstü uygulamasıyla konuşma iznini ona bağlar. Bu adım atlanırsa eklenti
    "Access to the specified native messaging host is forbidden" der.
-
-.torrent DOSYALARI
-------------------
-Kurulum, .torrent dosyalarını Akıntı'ya bağlamayı dener. Windows'ta daha önce
-başka bir program seçilmişse bu kayıt kilitlidir; bir .torrent dosyasına sağ
-tıkla > Birlikte aç > Başka uygulama seç > Akıntı > "Her zaman bu uygulamayı kullan".
 
 KALDIRMA
 --------

@@ -177,6 +177,14 @@ public static class PostActions
     /// olan dosyalarda Gezgin yolu cozemeyip Belgeler klasorunu aciyor. Kabuk
     /// arayuzu yolu metin olarak degil, dogrudan nesne olarak aliyor.
     /// </summary>
+    /// <summary>Adresi kullanicinin varsayilan tarayicisinda acar.</summary>
+    public static void OpenInBrowser(string url)
+    {
+        if (!UrlHelper.IsSupportedScheme(url)) return;
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn("Adres tarayicida acilamadi: " + ex.Message); }
+    }
+
     public static void OpenFolder(string filePath)
     {
         try

@@ -17,6 +17,11 @@ namespace Akinti.Ui;
 public partial class NewDownloadWindow : Window
 {
     private readonly Config _cfg = Config.Load();
+
+    /// <summary>Tarayicidan gelen istegin dosya yolu; karar bu yol uzerinden geri bildirilir.</summary>
+    private readonly string? _requestPath;
+    private string _decision = "akinti";
+
     private readonly string? _referrer;
     private readonly bool _hasSuggestedName;
     private string? _cookie;
@@ -29,11 +34,18 @@ public partial class NewDownloadWindow : Window
     private bool _loading = true;
 
     /// <summary>Tarayicidan devralinan indirme: adres, ad, cerez ve kimlik dizesi hazir gelir.</summary>
-    public NewDownloadWindow(CapturedRequest captured)
+    public NewDownloadWindow(CapturedRequest captured, string? requestPath = null)
         : this(captured.Url, captured.Referrer, captured.FileName)
     {
         _cookie = captured.Cookie;
         _userAgent = captured.UserAgent;
+        _requestPath = requestPath;
+
+        // Tarayicidan devralinan indirmede ikinci dugmenin isi bellidir: isi
+        // Chrome'a geri vermek. Elle acilan diyalogda boyle bir indirme yok,
+        // orada dugme indirmeyi duraklatilmis olarak kuyruga atar.
+        BtnLater.Content = "Tarayıcıya bırak";
+        BtnLater.ToolTip = "İndirmeyi Chrome kaldığı yerden sürdürsün";
     }
 
     public NewDownloadWindow(string? url, string? referrer = null, string? suggestedName = null)
@@ -162,9 +174,39 @@ public partial class NewDownloadWindow : Window
 
     private void BtnCancel_Click(object sender, RoutedEventArgs e) => Close();
 
+    /// <summary>Diyalog nasil kapanirsa kapansin, bekleyen native host cevabini alsin.</summary>
+    protected override void OnClosed(EventArgs e)
+    {
+        CapturedRequest.WriteDecision(_requestPath, _decision);
+        base.OnClosed(e);
+    }
+
     private async void BtnDownload_Click(object sender, RoutedEventArgs e) => await StartAsync(paused: false);
 
-    private async void BtnLater_Click(object sender, RoutedEventArgs e) => await StartAsync(paused: true);
+    private async void BtnLater_Click(object sender, RoutedEventArgs e)
+    {
+        // Elle acilan diyalogda devralinacak bir indirme yok: kuyruga duraklatilmis eklenir.
+        if (_requestPath is null) { await StartAsync(paused: true); return; }
+
+        _decision = CapturedRequest.LeaveToBrowser;
+        CapturedRequest.WriteDecision(_requestPath, _decision);
+        SetBusy(true, "Tarayıcıya bırakılıyor…");
+
+        // Native host bekliyorsa karari aninda alir ve Chrome duraklatilmis
+        // indirmeyi surdurur. Almiyorsa (host cok beklemis ve devri kabul etmis)
+        // Chrome'un kopyasi coktan silinmistir; geriye adresi tarayicida yeniden
+        // acmak kaliyor.
+        for (var i = 0; i < 20 && CapturedRequest.DecisionPending(_requestPath); i++)
+            await Task.Delay(100);
+
+        if (CapturedRequest.DecisionPending(_requestPath))
+        {
+            Log.Warn("Devir zaten kabul edilmisti; adres tarayicida yeniden aciliyor.");
+            PostActions.OpenInBrowser(TxtUrl.Text.Trim());
+        }
+
+        Close();
+    }
 
     private async Task StartAsync(bool paused)
     {

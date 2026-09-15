@@ -4,6 +4,7 @@
         Title="Ayarlar" Height="700" Width="700" MinHeight="520" MinWidth="600"
         Icon="/akinti.ico"
         Background="{DynamicResource B.Bg}"
+        Foreground="{DynamicResource B.Text}"
         WindowStartupLocation="CenterOwner"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">

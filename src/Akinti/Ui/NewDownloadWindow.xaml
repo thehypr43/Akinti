@@ -4,6 +4,7 @@
         Title="Bağlantı yakalandı" Width="428" SizeToContent="Height"
         Icon="/akinti.ico"
         Background="{DynamicResource B.Mica}"
+        Foreground="{DynamicResource B.Text}"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True"

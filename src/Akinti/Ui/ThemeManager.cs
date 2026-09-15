@@ -41,7 +41,7 @@ public static class ThemeManager
         var app = Application.Current;
         if (app is null) return;
 
-        var dict = Build(ReadIsLight(), default);
+        var dict = Build(ReadIsLight(), ReadAccent());
 
         if (_current is not null) app.Resources.MergedDictionaries.Remove(_current);
         // Palet en sona eklenir: ayni anahtar birden fazla sozlukte varsa
@@ -65,15 +65,32 @@ public static class ThemeManager
         return IsLight;
     }
 
+    /// <summary>
+    /// Windows'un vurgu rengi. DWM onu ABGR duzeninde bir DWORD olarak tutuyor.
+    /// Okunamazsa tasarimin kendi mavisi kullanilir.
+    /// </summary>
+    private static Color? ReadAccent()
+    {
+        try
+        {
+            var v = Registry.GetValue(
+                @"HKEY_CURRENT_USER\Software\Microsoft\Windows\DWM", "AccentColor", null);
+            if (v is not int abgr) return null;
+            return Color.FromRgb((byte)(abgr & 0xFF), (byte)((abgr >> 8) & 0xFF), (byte)((abgr >> 16) & 0xFF));
+        }
+        catch { return null; }
+    }
+
     // ──────────── Palet ────────────
 
     /// <summary>
-    /// Palet, Claude Design'daki "Fluent İndirme Yöneticisi" dosyasindan birebir
-    /// aliniyor. Vurgu rengi de tasarimin kendi rengi: Windows'un vurgu rengi
-    /// mor/pembe secilmis olabiliyor ve tasarimin mavisiyle cakisıyordu. Acik/koyu
-    /// secimi yine Windows'tan geliyor.
+    /// Palet, Claude Design'daki "Fluent İndirme Yöneticisi" dosyasindan aliniyor;
+    /// vurgu rengi ise kullanicinin Windows'ta sectigi renk. Sistemin ham rengi
+    /// oldugu gibi kullanilamiyor: acik temada cok aydinlik bir vurgunun uzerindeki
+    /// beyaz yazi okunmuyor, koyu temada cok karanligi zemine gomuluyor. Bu yuzden
+    /// renk tonu korunup yalnizca aydinligi temaya gore hizalaniyor.
     /// </summary>
-    private static ResourceDictionary Build(bool light, Color systemAccent)
+    private static ResourceDictionary Build(bool light, Color? systemAccent)
     {
         var d = new ResourceDictionary();
 
@@ -82,8 +99,12 @@ public static class ThemeManager
         void Alpha(string key, Color c, double a) => d[key] = Frozen(WithAlpha(c, a));
 
         // --- Tasarim belirteçleri ---
-        var accent     = light ? Rgb(0x0F6CBD) : Rgb(0x4CC2FF);   // --accent
-        var accentInk  = light ? Colors.White  : Rgb(0x00243B);   // --accentink
+        var accent = systemAccent is { } sys
+            ? WithLightness(sys, light ? 0.36 : 0.66)
+            : (light ? Rgb(0x0F6CBD) : Rgb(0x4CC2FF));            // --accent
+        // Vurgu zeminin uzerindeki yazi: acik temada beyaz, koyu temada ayni
+        // rengin cok karanlik hali - boylece dolu dugmede kontrast hep yeterli.
+        var accentInk  = light ? Colors.White : WithLightness(accent, 0.12);
         var desk       = light ? Rgb(0xECEFF3) : Rgb(0x171717);   // --desk
         var card       = light ? Rgb(0xFFFFFF) : Rgb(0x2D2D2D);   // --card
         var ink        = light ? Rgb(0x191919) : Rgb(0xFFFFFF);   // --ink
@@ -130,6 +151,13 @@ public static class ThemeManager
         B("B.Success", ok);
         B("B.Warn", warn);
 
+        // "Yonetici olarak calistir" tonu: uyari sarisi degil, sakin bir turuncu.
+        var admin = light ? Rgb(0x9A4F00) : Rgb(0xE9A66A);
+        B("B.Admin", admin);
+        Alpha("B.AdminFill", admin, light ? 0.10 : 0.14);
+        Alpha("B.AdminHover", admin, light ? 0.17 : 0.22);
+        Alpha("B.AdminStroke", admin, light ? 0.32 : 0.36);
+
         // --- Katmanlar ve cizgiler ---
         Alpha("B.Card2", Colors.White, light ? 0.55 : 0.04);          // --card2
         Alpha("B.Layer", Colors.White, light ? 0.70 : 0.045);         // --layer
@@ -153,6 +181,13 @@ public static class ThemeManager
         Alpha("B.AccentSubtle", accent, light ? 0.12 : 0.18);
         Alpha("B.DangerHover", err, light ? 0.14 : 0.26);
 
+        // Dolu birincil dugmenin altindaki ikinci sira: ayni renk ailesi,
+        // dusuk vurgu. Parlak degil, zemine yedirilmis bir ton.
+        Alpha("B.SoftFill", accent, light ? 0.10 : 0.14);
+        Alpha("B.SoftHover", accent, light ? 0.17 : 0.22);
+        Alpha("B.SoftStroke", accent, light ? 0.30 : 0.34);
+        B("B.SoftText", WithLightness(accent, light ? 0.30 : 0.74));
+
         return d;
     }
 
@@ -160,6 +195,44 @@ public static class ThemeManager
 
     private static Color Rgb(int hex) =>
         Color.FromRgb((byte)(hex >> 16), (byte)(hex >> 8), (byte)hex);
+
+    /// <summary>Rengin tonunu ve doygunlugunu koruyup aydinligini hedefe cekar.</summary>
+    private static Color WithLightness(Color c, double target)
+    {
+        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+        double l = (max + min) / 2.0, h = 0, s = 0;
+
+        if (max > min)
+        {
+            var d = max - min;
+            s = l > 0.5 ? d / (2.0 - max - min) : d / (max + min);
+            if (max == r) h = (g - b) / d + (g < b ? 6 : 0);
+            else if (max == g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h /= 6.0;
+        }
+
+        // Cok soluk bir vurgu (kullanici gri secmis olabilir) aydinlatilinca
+        // tamamen gri kaliyor; ton yoksa dokunmaya da deger yok.
+        l = Math.Clamp(target, 0, 1);
+        if (s <= 0.001) return Color.FromRgb((byte)(l * 255), (byte)(l * 255), (byte)(l * 255));
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        return Color.FromRgb(Ch(p, q, h + 1.0 / 3), Ch(p, q, h), Ch(p, q, h - 1.0 / 3));
+
+        static byte Ch(double p, double q, double t)
+        {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            var v = t < 1.0 / 6 ? p + (q - p) * 6 * t
+                  : t < 1.0 / 2 ? q
+                  : t < 2.0 / 3 ? p + (q - p) * (2.0 / 3 - t) * 6
+                  : p;
+            return (byte)Math.Round(Math.Clamp(v, 0, 1) * 255);
+        }
+    }
 
     private static Color WithAlpha(Color c, double a) =>
         Color.FromArgb((byte)Math.Round(Math.Clamp(a, 0, 1) * 255), c.R, c.G, c.B);

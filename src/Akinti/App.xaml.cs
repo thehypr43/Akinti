@@ -83,7 +83,7 @@ public partial class App : Application
                 Shutdown(1);
                 return;
             }
-            new NewDownloadWindow(captured).Show();
+            new NewDownloadWindow(captured, args[reqIndex + 1]).Show();
             return;
         }
 

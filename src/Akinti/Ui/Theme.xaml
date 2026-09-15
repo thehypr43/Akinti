@@ -37,9 +37,12 @@
     <FontFamily x:Key="F.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <!-- ══════════════ Tipografi ══════════════ -->
+    <!-- DIKKAT: burada Foreground YOK. Ortuk stil, miras yoluyla gelen rengi
+         ezdigi icin dugme icindeki yazi dugmenin kendi rengini alamiyordu
+         (dolu vurgu dugmesinde beyaz yazi beyazimsi zeminde kayboluyordu).
+         Yazi rengi pencere kokunden miras aliniyor. -->
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource F.Ui}" />
-        <Setter Property="Foreground" Value="{DynamicResource B.Text}" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
         <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
@@ -186,6 +189,39 @@
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter Property="Background" Value="{DynamicResource B.Press}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Birincil dugmenin hemen altindaki ikinci is: ayni renk ailesi, dolu
+         degil yedirilmis bir ton. Cirtlak olmasin diye zemin saydam vurgu. -->
+    <Style x:Key="Btn.Soft" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
+        <Setter Property="Background" Value="{DynamicResource B.SoftFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.SoftText}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B.SoftStroke}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource B.SoftHover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.8" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Yonetici yetkisi isteyen is: ayni olcu, uyari tonu. -->
+    <Style x:Key="Btn.Admin" TargetType="Button" BasedOn="{StaticResource Btn.Base}">
+        <Setter Property="Background" Value="{DynamicResource B.AdminFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource B.Admin}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B.AdminStroke}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource B.AdminHover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Opacity" Value="0.8" />
             </Trigger>
         </Style.Triggers>
     </Style>

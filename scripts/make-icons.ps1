@@ -1,6 +1,6 @@
-<#
+﻿<#
   Eklenti PNG ikonlarini ve uygulama .ico dosyasini uretir.
-  Gecici bir ikon seti: kullanicinin tasarimi gelince degistirilecek.
+  Amblem: vurgu mavisi squircle uzerinde tek beyaz asagi ok.
 #>
 [CmdletBinding()]
 param()
@@ -16,40 +16,53 @@ New-Item -ItemType Directory -Force -Path $iconsDir | Out-Null
 function New-Icon([int]$size) {
     $bmp = New-Object System.Drawing.Bitmap($size, $size)
     $g   = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.PixelOffsetMode   = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $g.Clear([System.Drawing.Color]::Transparent)
 
-    # Yuvarlak kose arka plan
-    $r    = [Math]::Max(2, [int]($size * 0.22))
-    $rect = New-Object System.Drawing.Rectangle(0, 0, ($size - 1), ($size - 1))
-    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+    # Amblem: yuvarlak kose kare (Windows 11 squircle orani) uzerinde tek bir
+    # asagi ok. Ok govdesi ile ucu ayni kalinlikta, uclari yuvarlatilmis; baska
+    # hicbir sey yok. Minimal olsun diye taban cizgisi ve golge kaldirildi.
+    $pad  = [double]$size * 0.06
+    $side = [double]$size - 2 * $pad
+    $r    = $side * 0.235
     $d    = $r * 2
-    $path.AddArc($rect.X, $rect.Y, $d, $d, 180, 90)
-    $path.AddArc(($rect.Right - $d), $rect.Y, $d, $d, 270, 90)
-    $path.AddArc(($rect.Right - $d), ($rect.Bottom - $d), $d, $d, 0, 90)
-    $path.AddArc($rect.X, ($rect.Bottom - $d), $d, $d, 90, 90)
+
+    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $path.AddArc($pad, $pad, $d, $d, 180, 90)
+    $path.AddArc(($pad + $side - $d), $pad, $d, $d, 270, 90)
+    $path.AddArc(($pad + $side - $d), ($pad + $side - $d), $d, $d, 0, 90)
+    $path.AddArc($pad, ($pad + $side - $d), $d, $d, 90, 90)
     $path.CloseFigure()
 
-    $bg = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 28, 31, 37))
+    # Zemin: vurgu mavisinin kosegen degradesi (acik ust sol -> koyu alt sag).
+    $rect = New-Object System.Drawing.RectangleF($pad, $pad, $side, $side)
+    $bg   = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        $rect,
+        [System.Drawing.Color]::FromArgb(255, 76, 194, 255),
+        [System.Drawing.Color]::FromArgb(255, 15, 108, 189),
+        45.0)
     $g.FillPath($bg, $path)
 
-    # Asagi ok
-    $accent = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 76, 141, 255))
-    $cx     = $size / 2.0
-    $shaftW = [Math]::Max(2.0, $size * 0.14)
-    $g.FillRectangle($accent, ($cx - $shaftW / 2), ($size * 0.20), $shaftW, ($size * 0.34))
+    # Ok: tek renk beyaz, kalem ucu yuvarlak.
+    $w   = [Math]::Max(1.6, $size * 0.105)
+    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), $w
+    $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $pen.EndCap   = [System.Drawing.Drawing2D.LineCap]::Round
+    $pen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
 
-    $head = New-Object 'System.Drawing.PointF[]' 3
-    $head[0] = New-Object System.Drawing.PointF(($cx - $size * 0.24), ($size * 0.46))
-    $head[1] = New-Object System.Drawing.PointF(($cx + $size * 0.24), ($size * 0.46))
-    $head[2] = New-Object System.Drawing.PointF($cx, ($size * 0.74))
-    $g.FillPolygon($accent, $head)
+    $cx   = $size / 2.0
+    $top  = $size * 0.30
+    $tip  = $size * 0.70
+    $arm  = $size * 0.155
+    $g.DrawLine($pen, $cx, $top, $cx, $tip)
+    $g.DrawLines($pen, [System.Drawing.PointF[]]@(
+        (New-Object System.Drawing.PointF(($cx - $arm), ($tip - $arm))),
+        (New-Object System.Drawing.PointF($cx, $tip)),
+        (New-Object System.Drawing.PointF(($cx + $arm), ($tip - $arm)))
+    ))
 
-    # Taban cizgisi
-    $g.FillRectangle($accent, ($size * 0.22), ($size * 0.80), ($size * 0.56),
-                     [Math]::Max(2.0, $size * 0.09))
-
-    $g.Dispose(); $bg.Dispose(); $accent.Dispose(); $path.Dispose()
+    $pen.Dispose(); $bg.Dispose(); $path.Dispose(); $g.Dispose()
     return $bmp
 }
 

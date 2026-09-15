@@ -54,29 +54,17 @@ public partial class DoneWindow : Window
     }
 
     /// <summary>Dugmeler yalnizca dosya turu izin veriyorsa gorunur: arsiv degilse
-    /// "Klasore cikar", calistirilabilir degilse "Yonetici olarak ac" hic cizilmez.</summary>
+    /// "Klasore cikar", calistirilabilir degilse "Yonetici olarak calistir" hic cizilmez.</summary>
     private void ShowCompleted()
     {
         Title = "İndirme tamamlandı";
         TxtHeading.Text = "İndirme tamamlandı";
-
-        var folder = _filePath.Length > 0 ? Path.GetFileName(Path.GetDirectoryName(_filePath) ?? "") : "";
-        TxtSub.Text = folder.Length > 0
-            ? $"Dosya {folder} klasörüne kaydedildi."
-            : "Dosya kaydedildi.";
 
         var exists = _filePath.Length > 0 && File.Exists(_filePath);
         BtnExtract.Visibility = exists && Archivers.IsArchive(_filePath) && Archivers.AnyAvailable()
             ? Visibility.Visible : Visibility.Collapsed;
         BtnRunAdmin.Visibility = exists && PostActions.IsRunnable(_filePath)
             ? Visibility.Visible : Visibility.Collapsed;
-        var extract = BtnExtract.Visibility == Visibility.Visible;
-        var admin = BtnRunAdmin.Visibility == Visibility.Visible;
-        PnlExtra.Visibility = extract || admin ? Visibility.Visible : Visibility.Collapsed;
-
-        // Tek dugme kaldiysa yarim satirda asili durmasin, tam genisligi alsin.
-        if (extract && !admin) { Grid.SetColumnSpan(BtnExtract, 2); BtnExtract.Margin = new Thickness(0); }
-        if (admin && !extract) { Grid.SetColumn(BtnRunAdmin, 0); Grid.SetColumnSpan(BtnRunAdmin, 2); }
         BtnOpenFile.Visibility = exists ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -84,7 +72,6 @@ public partial class DoneWindow : Window
     {
         Title = "İndirme başarısız";
         TxtHeading.Text = "İndirme başarısız";
-        TxtSub.Text = "Dosya alınamadı.";
 
         var danger = (Brush)FindResource("B.Danger");
         Badge.Background = danger;
@@ -96,7 +83,8 @@ public partial class DoneWindow : Window
 
         // Yarim kalan dosya ne acilir ne cikarilir; klasoru gostermek yine de ise yarar.
         BtnOpenFile.Visibility = Visibility.Collapsed;
-        PnlExtra.Visibility = Visibility.Collapsed;
+        BtnExtract.Visibility = Visibility.Collapsed;
+        BtnRunAdmin.Visibility = Visibility.Collapsed;
         BtnOpenFolder.Visibility = _filePath.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

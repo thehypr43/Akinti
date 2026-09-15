@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Akinti;
 
@@ -57,6 +57,60 @@ public sealed class CapturedRequest
         }
     }
 
+    // ──────────── Diyalogun karari ────────────
+    //
+    // Yakalanan indirme Chrome'da DURAKLATILMIS halde bekliyor. Native host,
+    // diyalog bir karar verene kadar Chrome'a cevap vermiyor; karar buradaki
+    // kucuk dosya uzerinden geciyor:
+    //
+    //   "browser" -> host Chrome'a "devralamadim" der, Chrome indirmeyi surdurur
+    //   bunun disinda -> devir tamam, Chrome kendi kopyasini iptal eder
+    //
+    // Boylece "Tarayiciya birak" gercekten tarayiciya birakir: dosya bastan
+    // indirilmez, duraklatilmis indirme kaldigi yerden devam eder.
+
+    public const string LeaveToBrowser = "browser";
+
+    private static string DecisionPath(string requestPath) => requestPath + ".decision";
+
+    /// <summary>Diyalogun kararini yazar. Istek dosyasi yoksa (elle indirme) sessizce gecer.</summary>
+    public static void WriteDecision(string? requestPath, string decision)
+    {
+        if (string.IsNullOrEmpty(requestPath)) return;
+        try { File.WriteAllText(DecisionPath(requestPath), decision); }
+        catch (Exception ex) { Log.Warn("Karar yazilamadi: " + ex.Message); }
+    }
+
+    /// <summary>Karar dosyasini bekler ve okur; sure dolarsa bos doner.</summary>
+    public static string WaitForDecision(string requestPath, TimeSpan timeout)
+    {
+        var path = DecisionPath(requestPath);
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    var v = File.ReadAllText(path).Trim();
+                    File.Delete(path);
+                    return v;
+                }
+            }
+            catch { /* diyalog tam o anda yaziyor olabilir; bir tur daha bekle */ }
+            Thread.Sleep(120);
+        }
+        return "";
+    }
+
+    /// <summary>
+    /// Karar hala duruyorsa kimse dinlemiyor demektir (host suresi dolmus ya da
+    /// cokmus). O zaman Chrome'un kopyasi coktan iptal edilmistir; indirmeyi
+    /// tarayiciya birakmanin tek yolu adresi tarayicida yeniden acmaktir.
+    /// </summary>
+    public static bool DecisionPending(string? requestPath) =>
+        !string.IsNullOrEmpty(requestPath) && File.Exists(DecisionPath(requestPath));
+
     /// <summary>
     /// Cokmus bir diyalogdan kalmis eski istek dosyalarini temizler.
     /// Cerez iceren dosyalar diskte birikmesin.
@@ -67,7 +121,7 @@ public sealed class CapturedRequest
         {
             if (!Directory.Exists(AppPaths.DataDir)) return;
             var cutoff = DateTime.Now.AddHours(-1);
-            foreach (var f in Directory.EnumerateFiles(AppPaths.DataDir, "req-*.json"))
+            foreach (var f in Directory.EnumerateFiles(AppPaths.DataDir, "req-*"))
             {
                 try { if (File.GetLastWriteTime(f) < cutoff) File.Delete(f); }
                 catch { /* onemsiz */ }

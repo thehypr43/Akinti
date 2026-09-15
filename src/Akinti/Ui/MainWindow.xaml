@@ -4,6 +4,7 @@
         Title="Akıntı" Height="660" Width="1040" MinHeight="460" MinWidth="880"
         Icon="/akinti.ico"
         Background="{DynamicResource B.Mica}"
+        Foreground="{DynamicResource B.Text}"
         WindowStartupLocation="CenterScreen"
         TextOptions.TextFormattingMode="Ideal"
         UseLayoutRounding="True" SnapsToDevicePixels="True">

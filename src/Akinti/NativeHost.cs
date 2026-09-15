@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -122,6 +122,19 @@ public static class NativeHost
             psi.ArgumentList.Add("--request");
             psi.ArgumentList.Add(reqPath);
             Process.Start(psi);
+
+            // Chrome'un indirmesi su an DURAKLATILMIS bekliyor. Cevabi hemen
+            // vermiyoruz: kullanici diyalogda "Tarayiciya birak" derse Chrome'un
+            // indirmeyi kaldigi yerden surdurmesini istiyoruz ve bunun tek yolu
+            // devir basarisiz cevabi vermek. Sure dolarsa devir kabul edilir;
+            // acik kalmis bir diyalog yuzunden indirme sonsuza dek beklemesin.
+            var decision = CapturedRequest.WaitForDecision(reqPath, TimeSpan.FromMinutes(10));
+            if (decision == CapturedRequest.LeaveToBrowser)
+            {
+                Log.Info("Kullanici indirmeyi tarayiciya birakti.");
+                return (false, "tarayiciya birakildi");
+            }
+
             return (true, "diyalog acildi");
         }
         catch (Exception ex)

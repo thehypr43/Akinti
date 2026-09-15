@@ -314,6 +314,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Ayarlar bir sayfa degil, kendi penceresi. Secimi eski sekmeye geri al.
             Dispatcher.BeginInvoke(() =>
             {
+                // Ayarlar satiri secili KALMAMALI: kalirsa ikinci kez tiklandiginda
+                // Checked bir daha tetiklenmiyor ve pencere hic acilmiyordu.
+                NavSettings.IsChecked = false;
                 (_lastNav ?? NavAll).IsChecked = true;
                 OpenSettings();
             });

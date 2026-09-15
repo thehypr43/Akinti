@@ -29,7 +29,7 @@
             </Button>
 
             <StackPanel DockPanel.Dock="Top">
-                <RadioButton x:Name="NavAll" Style="{StaticResource Nav.Item}" Tag="All"
+                <RadioButton x:Name="NavAll" Style="{StaticResource Nav.Item}" Tag="All" GroupName="Nav"
                              IsChecked="True" Checked="Nav_Checked">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
@@ -43,7 +43,7 @@
                     </Grid>
                 </RadioButton>
 
-                <RadioButton x:Name="NavActive" Style="{StaticResource Nav.Item}" Tag="Active"
+                <RadioButton x:Name="NavActive" Style="{StaticResource Nav.Item}" Tag="Active" GroupName="Nav"
                              Checked="Nav_Checked">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
@@ -62,7 +62,7 @@
                     </Grid>
                 </RadioButton>
 
-                <RadioButton x:Name="NavPaused" Style="{StaticResource Nav.Item}" Tag="Paused"
+                <RadioButton x:Name="NavPaused" Style="{StaticResource Nav.Item}" Tag="Paused" GroupName="Nav"
                              Checked="Nav_Checked">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
@@ -76,7 +76,7 @@
                     </Grid>
                 </RadioButton>
 
-                <RadioButton x:Name="NavDone" Style="{StaticResource Nav.Item}" Tag="Done"
+                <RadioButton x:Name="NavDone" Style="{StaticResource Nav.Item}" Tag="Done" GroupName="Nav"
                              Checked="Nav_Checked">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
@@ -90,7 +90,7 @@
                     </Grid>
                 </RadioButton>
 
-                <RadioButton x:Name="NavFailed" Style="{StaticResource Nav.Item}" Tag="Failed"
+                <RadioButton x:Name="NavFailed" Style="{StaticResource Nav.Item}" Tag="Failed" GroupName="Nav"
                              Checked="Nav_Checked">
                     <Grid>
                         <StackPanel Orientation="Horizontal">
@@ -125,7 +125,7 @@
                     </StackPanel>
                 </Border>
 
-                <RadioButton x:Name="NavSettings" Style="{StaticResource Nav.Item}" Tag="Settings"
+                <RadioButton x:Name="NavSettings" Style="{StaticResource Nav.Item}" Tag="Settings" GroupName="Nav"
                              Margin="0,6,0,0" Checked="Nav_Checked">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE713;" FontFamily="{StaticResource F.Icon}" FontSize="14"
@@ -334,7 +334,12 @@
                             </Border>
 
                             <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                                <!-- Renk BURADA acikca veriliyor: sanal listede geri
+                                     donusturulen satirlar tema degisince miras aldiklari
+                                     rengi guncellemiyor ve dosya adlari koyu temada
+                                     siyah kaliyordu. -->
                                 <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource B.Text}"
                                            TextTrimming="CharacterEllipsis" />
                                 <Grid Margin="0,5,0,0">
                                     <Grid.ColumnDefinitions>

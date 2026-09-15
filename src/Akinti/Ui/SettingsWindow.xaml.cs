@@ -39,9 +39,33 @@ public partial class SettingsWindow : Window
                 ? Format.Speed((long)kb * 1024)
                 : "Sınırsız");
 
+    /// <summary>Tema secimi kaydedilmeyi beklemeden uygulanir: kullanici farki
+    /// aninda gorur. Kaydetmeden cikarsa eski secim geri yuklenir.</summary>
+    private void Theme_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded && !_loaded) return;
+        ThemeManager.Preference = ThemeValue();
+        ThemeManager.Apply();
+    }
+
+    private string ThemeValue() =>
+        ThemeLight.IsChecked == true ? "light"
+        : ThemeDark.IsChecked == true ? "dark"
+        : "system";
+
+    private bool _loaded;
+
     private void LoadValues()
     {
         TxtDownloadDir.Text = _cfg.DownloadDir;
+
+        (_cfg.Theme switch
+        {
+            "light" => ThemeLight,
+            "dark" => ThemeDark,
+            _ => ThemeSystem,
+        }).IsChecked = true;
+        _loaded = true;
 
         SegFor(_cfg.MaxConcurrentDownloads).IsChecked = true;
         TxtConnections.Text = _cfg.ConnectionsPerDownload.ToString();
@@ -90,6 +114,7 @@ public partial class SettingsWindow : Window
         _cfg.GlobalSpeedLimitBytes = (long)limitKb * 1024;
         _cfg.ArchiverPath = CmbArchiver.Text.Trim();
         _cfg.OpenFolderAfterDownloadDefault = ChkOpenFolderDefault.IsChecked == true;
+        _cfg.Theme = ThemeValue();
         _cfg.ExtraAria2Args = TxtExtraArgs.Text
             .Split('\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(l => l.Trim())
@@ -126,7 +151,15 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void BtnCancel_Click(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }
+    /// <summary>Kaydetmeden cikildiginda canli denenen tema geri alinir.</summary>
+    private void RevertTheme()
+    {
+        if (ThemeManager.Preference == _cfg.Theme) return;
+        ThemeManager.Preference = _cfg.Theme;
+        ThemeManager.Apply();
+    }
+
+    private void BtnCancel_Click(object sender, RoutedEventArgs e) { RevertTheme(); DialogResult = false; Close(); }
 
     private async void BtnRestartEngine_Click(object sender, RoutedEventArgs e)
     {

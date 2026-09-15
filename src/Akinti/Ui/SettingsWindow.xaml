@@ -109,6 +109,29 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ═══ Gorunum ═══ -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="GÖRÜNÜM" Style="{StaticResource T.Kicker}" Margin="0,0,0,10" />
+                        <TextBlock Text="Tema" Style="{StaticResource T.Meta}" Margin="0,0,0,6" />
+                        <Border Style="{StaticResource Seg}" HorizontalAlignment="Left">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="ThemeSystem" Style="{StaticResource Seg.Opt}"
+                                             Content="Sistem" GroupName="Theme" MinWidth="88"
+                                             Checked="Theme_Checked" />
+                                <RadioButton x:Name="ThemeLight" Style="{StaticResource Seg.Opt}"
+                                             Content="Açık" GroupName="Theme" MinWidth="88"
+                                             Checked="Theme_Checked" />
+                                <RadioButton x:Name="ThemeDark" Style="{StaticResource Seg.Opt}"
+                                             Content="Koyu" GroupName="Theme" MinWidth="88"
+                                             Checked="Theme_Checked" />
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Seçim anında uygulanır. Sistem seçiliyken Windows'un açık/koyu ayarı ve vurgu rengi izlenir."
+                                   Style="{StaticResource T.Meta}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ═══ Davranis ═══ -->
                 <Border Style="{StaticResource Card}" Margin="0,12,0,0" Padding="14">
                     <StackPanel>

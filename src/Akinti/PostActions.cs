@@ -185,6 +185,18 @@ public static class PostActions
         catch (Exception ex) { Log.Warn("Adres tarayicida acilamadi: " + ex.Message); }
     }
 
+    /// <summary>Dosyayi kendi varsayilan programiyla acar. Yonetici yetkisi
+    /// verilmez; o ayri ve acikca secilen bir islem.</summary>
+    public static void OpenFile(string filePath)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) { OpenFolder(filePath); return; }
+            Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+        }
+        catch (Exception ex) { Log.Warn("Dosya acilamadi: " + ex.Message); }
+    }
+
     public static void OpenFolder(string filePath)
     {
         try

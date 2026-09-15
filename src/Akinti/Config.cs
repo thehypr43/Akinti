@@ -42,6 +42,9 @@ public sealed class Config
 
     public bool OpenFolderAfterDownloadDefault { get; set; }
 
+    /// <summary>"system" | "light" | "dark". Varsayilan sistemin temasini izler.</summary>
+    public string Theme { get; set; } = "system";
+
     /// <summary>Guc kullanici kacis kapisi. Dogrudan aria2c komut satirina eklenir.</summary>
     public List<string> ExtraAria2Args { get; set; } = new();
 

@@ -67,7 +67,7 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
     public double Percent => Total > 0 ? Math.Clamp(Completed * 100.0 / Total, 0, 100) : 0;
 
-    public string PercentText => State == RowState.Failed ? "" : $"{(int)Percent}%";
+    public string PercentText => State == RowState.Failed ? "" : "%" + (int)Percent;
 
     /// <summary>Dosya karesinde yazan uzanti: ZIP, EXE, MP4... Tasarimda bu kare
     /// ikon degil, dosyanin uzantisini tasiyor.</summary>
@@ -83,8 +83,78 @@ public sealed class DownloadRow : INotifyPropertyChanged
     }
 
     /// <summary>"8 bölüm" — aria2 su an kac baglanti kullaniyor.</summary>
-    public string PartsText => State == RowState.Active && Connections > 0
-        ? Connections + " bölüm" : "";
+    public string PartsText => State switch
+    {
+        RowState.Active when Connections > 0 => Connections + " bölüm",
+        RowState.Waiting => "sırada",
+        RowState.Paused => "beklemede",
+        _ => "",
+    };
+
+    /// <summary>Satirin durumu, meta satirinin basinda renkli tek kelime.
+    /// Surmekte olan indirmede yazilmaz: cubuk zaten onu soyluyor.</summary>
+    public string StatusText => State switch
+    {
+        RowState.Waiting => "Kuyrukta",
+        RowState.Paused => "Duraklatıldı",
+        RowState.Completed => "Tamamlandı",
+        RowState.Failed => "Başarısız",
+        RowState.Cancelled => "İptal edildi",
+        _ => "",
+    };
+
+    public Brush StatusBrush => State switch
+    {
+        RowState.Paused => Res("B.Admin", "#FF9A4F00"),
+        RowState.Completed => Res("B.Success", "#FF0F7B0F"),
+        RowState.Failed or RowState.Cancelled => Res("B.Danger", "#FFC42B1C"),
+        _ => Res("B.TextMuted", "#FF808080"),
+    };
+
+    public Visibility StatusVisibility =>
+        StatusText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility SeparatorVisibility =>
+        StatusText.Length > 0 && MetaText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Cubuk yalnizca surmekte olan satirlarda; biten satirda anlami yok.</summary>
+    public Visibility ProgressVisibility =>
+        State is RowState.Active or RowState.Paused or RowState.Waiting
+            ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Yarim kalmis indirme yeniden denenirse kaldigi yerden devam eder.</summary>
+    public string HintText =>
+        State is RowState.Failed or RowState.Cancelled && Completed > 0 ? "Sürdürülebilir" : "";
+
+    public Visibility HintVisibility =>
+        HintText.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility RetryVisibility => CanRetry ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility OpenVisibility =>
+        State == RowState.Completed ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Listeyi gune gore bolen baslik.</summary>
+    public string GroupKey
+    {
+        get
+        {
+            var d = (FinishedAt ?? DateTime.Now).Date;
+            var today = DateTime.Now.Date;
+            if (d == today) return "Bugün";
+            if (d == today.AddDays(-1)) return "Dün";
+            return d.ToString("d MMMM yyyy");
+        }
+    }
+
+    /// <summary>Siralama anahtari: en yenisi ustte.</summary>
+    public DateTime SortDate => FinishedAt ?? DateTime.Now;
+
+    /// <summary>Arama kutusu ad ve siteye bakar.</summary>
+    public bool Matches(string needle) =>
+        needle.Length == 0
+        || Name.Contains(needle, StringComparison.OrdinalIgnoreCase)
+        || Host.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
     private int _connections;
     public int Connections
@@ -142,8 +212,7 @@ public sealed class DownloadRow : INotifyPropertyChanged
             {
                 var parts = new List<string>();
                 if (Total > 0) parts.Add(Format.Bytes(Total));
-                if (!string.IsNullOrEmpty(Host)) parts.Add(Host);
-                if (FinishedAt is { } t) parts.Add(t.ToString("dd.MM.yyyy HH:mm"));
+                if (FinishedAt is { } t) parts.Add(FinishedLabel(t));
                 if (!string.IsNullOrEmpty(Note)) parts.Add(Note!);
                 return string.Join("  ·  ", parts);
             }
@@ -155,9 +224,19 @@ public sealed class DownloadRow : INotifyPropertyChanged
 
             if (State == RowState.Active && Speed > 0) meta.Add(Format.Speed(Speed));
             if (State == RowState.Active && Eta is { } eta) meta.Add(Format.Duration(eta) + " kaldı");
-            if (!string.IsNullOrEmpty(Host)) meta.Add(Host);
+            if (State != RowState.Active && !string.IsNullOrEmpty(Host)) meta.Add(Host);
             return string.Join("  ·  ", meta);
         }
+    }
+
+    /// <summary>"Dün 21:14" gibi; eski tarihlerde gun de yazilir.</summary>
+    private static string FinishedLabel(DateTime t)
+    {
+        var d = t.Date;
+        var today = DateTime.Now.Date;
+        if (d == today) return t.ToString("HH:mm");
+        if (d == today.AddDays(-1)) return "Dün " + t.ToString("HH:mm");
+        return t.ToString("dd.MM.yyyy HH:mm");
     }
 
     public string Host
@@ -196,6 +275,9 @@ public sealed class DownloadRow : INotifyPropertyChanged
         Changed(nameof(Percent));
         Changed(nameof(PercentText));
         Changed(nameof(MetaText));
+        Changed(nameof(SeparatorVisibility));
+        Changed(nameof(HintText));
+        Changed(nameof(HintVisibility));
         Changed(nameof(SpeedText));
         Changed(nameof(EtaText));
         Changed(nameof(PartsText));
@@ -211,6 +293,12 @@ public sealed class DownloadRow : INotifyPropertyChanged
         Changed(nameof(BarBrush));
         Changed(nameof(ToggleGlyph));
         Changed(nameof(ToggleVisibility));
+        Changed(nameof(StatusText));
+        Changed(nameof(StatusBrush));
+        Changed(nameof(StatusVisibility));
+        Changed(nameof(ProgressVisibility));
+        Changed(nameof(RetryVisibility));
+        Changed(nameof(OpenVisibility));
         Changed(nameof(IsFinished));
         Changed(nameof(CanPause));
         Changed(nameof(CanResume));

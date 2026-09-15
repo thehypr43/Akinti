@@ -22,7 +22,7 @@ public partial class App : Application
         base.OnStartup(e);
 
         // Palet pencerelerden ONCE kurulmali: Theme.xaml'deki her renk buradan geliyor.
-        Ui.ThemeManager.Initialize();
+        Ui.ThemeManager.Initialize(Config.Load().Theme);
 
         try
         {

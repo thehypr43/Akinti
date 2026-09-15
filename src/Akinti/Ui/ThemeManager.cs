@@ -21,10 +21,18 @@ public static class ThemeManager
 
     private static ResourceDictionary? _current;
 
+    /// <summary>
+    /// Ayarlardan gelen tercih: "system" | "light" | "dark". Config'i her tema
+    /// tazelemesinde diskten okumamak icin burada tutuluyor; Ayarlar penceresi
+    /// kaydederken guncelliyor.
+    /// </summary>
+    public static string Preference { get; set; } = "system";
+
     public static bool IsLight { get; private set; }
 
-    public static void Initialize()
+    public static void Initialize(string? preference = null)
     {
+        if (!string.IsNullOrWhiteSpace(preference)) Preference = preference!;
         Apply();
 
         // Kullanici Windows'ta temayi ya da vurgu rengini degistirdiginde
@@ -59,6 +67,11 @@ public static class ThemeManager
         var forced = Environment.GetEnvironmentVariable("AKINTI_THEME");
         if (string.Equals(forced, "light", StringComparison.OrdinalIgnoreCase)) return IsLight = true;
         if (string.Equals(forced, "dark", StringComparison.OrdinalIgnoreCase)) return IsLight = false;
+
+        // Ayarlardaki secim: "system" ise karar yine Windows'un.
+        var chosen = Preference;
+        if (string.Equals(chosen, "light", StringComparison.OrdinalIgnoreCase)) return IsLight = true;
+        if (string.Equals(chosen, "dark", StringComparison.OrdinalIgnoreCase)) return IsLight = false;
 
         var v = Registry.GetValue(PersonalizeKey, "AppsUseLightTheme", null);
         IsLight = v is int i && i != 0;

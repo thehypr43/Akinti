@@ -1,34 +1,58 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Data;
 using System.Windows.Threading;
 
 namespace Akinti.Ui;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
-    private const int SparkPoints = 42;
-    private const double SparkW = 168, SparkH = 40;
-
     private readonly ObservableCollection<DownloadRow> _rows = [];
     private readonly Dictionary<string, DownloadRow> _byGid = [];
-    private readonly List<double> _speedHistory = [];
     private readonly DispatcherTimer _timer;
 
     private Config _cfg = Config.Load();
     private Aria2Client? _client;
-    private string _filter = "Active";
+    private string _filter = "All";
+    private string _search = "";
     private RadioButton? _lastNav;
     private bool _busy;
     private bool _allPaused;
+    private bool _sidebarCollapsed;
+
+    /// <summary>Siralama: 0 tarih, 1 ad, 2 boyut.</summary>
+    private int _sort;
+
+    private string _totalSpeedText = "0,0 MB/s";
+
+    /// <summary>"Bugün" grubunun sagindaki canli toplam hiz.</summary>
+    public string TotalSpeedText
+    {
+        get => _totalSpeedText;
+        private set
+        {
+            if (_totalSpeedText == value) return;
+            _totalSpeedText = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TotalSpeedText)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = this;
         List.ItemsSource = _rows;
-        _lastNav = NavActive;
+        _lastNav = NavAll;
+
+        // Satirlar gune gore gruplanir; grup basliklari tasarimdaki "Bugün"/"Dün".
+        var view = CollectionViewSource.GetDefaultView(_rows);
+        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(DownloadRow.GroupKey)));
+        ApplySort(view);
 
         // Pencere gorunur degilken hic sorgu atilmaz; kapaliyken CPU tuketimi sifir.
         _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
@@ -39,7 +63,7 @@ public partial class MainWindow : Window
         IsVisibleChanged += (_, _) => UpdateTimerState();
         StateChanged += (_, _) => UpdateTimerState();
 
-        UpdateUrlPlaceholder();
+        UpdateSearchPlaceholder();
     }
 
     private void UpdateTimerState()
@@ -54,7 +78,6 @@ public partial class MainWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         UpdateDiskInfo();
-        UpdateCapLabel();
 
         if (!_cfg.IsConfigured)
         {
@@ -113,7 +136,6 @@ public partial class MainWindow : Window
                 if (seen.Add(h.Gid)) Upsert(DownloadRow.From(h));
             }
 
-            PushSpeed(stat.DownloadSpeed);
             UpdateHeader(stat);
             ApplyFilter();
         }
@@ -139,8 +161,10 @@ public partial class MainWindow : Window
         var done = _rows.Count(r => r.State == RowState.Completed);
         var failed = _rows.Count(r => r.State is RowState.Failed or RowState.Cancelled);
 
-        CntActive.Text = (running + paused + waiting).ToString();
-        CntQueue.Text = waiting.ToString();
+        CntAll.Text = _rows.Count.ToString();
+        CntActive.Text = (running + waiting).ToString();
+        PillActive.Visibility = running + waiting > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CntPaused.Text = paused.ToString();
         CntDone.Text = done.ToString();
         CntFailed.Text = failed.ToString();
 
@@ -149,37 +173,37 @@ public partial class MainWindow : Window
             ? $"Akıntı — {running} indiriliyor · {waiting} kuyrukta"
             : "Akıntı";
 
-        var mb = stat.DownloadSpeed / 1024.0 / 1024.0;
-        TxtTotalSpeed.Text = mb.ToString("0.0");
-
-        TxtStatusLeft.Text = _client is null ? "Motor kapalı" : "Motor çalışıyor";
-        TxtStatusRight.Text = $"↓ {mb:0.0} MB/s  ·  sınır {CapLabel()}";
+        // Sabit MB/s birimi kucuk hizlarda hep "0,0" gosteriyordu; birim degere gore secilir.
+        TotalSpeedText = Format.Speed(stat.DownloadSpeed);
 
         _allPaused = running == 0 && paused > 0;
-        IcoToggleAll.Text = _allPaused ? "\uE768" : "\uE769";
         TxtToggleAll.Text = _allPaused ? "Tümünü sürdür" : "Tümünü duraklat";
 
-        (TxtSectionTitle.Text, TxtSectionSub.Text) = _filter switch
-        {
-            "Queue" => ("Kuyruk", "Aynı anda " + _cfg.MaxConcurrentDownloads +
-                                  " aktarım çalışır, diğerleri sırada bekler."),
-            "Done" => ("Tamamlanan", done + " kayıt"),
-            "Failed" => ("Başarısız", failed + " kayıt"),
-            _ => ("Etkin", $"{running} çalışıyor, {paused} duraklatıldı, {waiting} bekliyor"),
-        };
+        TxtStatusLeft.Text = _client is null
+            ? "Motor kapalı"
+            : $"{running} etkin indirme  ·  Toplam {TotalSpeedText}";
+        TxtStatusRight.Text = $"Hız sınırı: {CapLabel()}";
 
-        PnlSpeed.Visibility = _filter == "Active" ? Visibility.Visible : Visibility.Collapsed;
+        TxtSectionTitle.Text = _filter switch
+        {
+            "Active" => "Devam edenler",
+            "Paused" => "Duraklatılmış",
+            "Done" => "Tamamlananlar",
+            "Failed" => "Başarısız",
+            _ => "İndirilenler",
+        };
     }
 
     private void ApplyFilter()
     {
-        var view = System.Windows.Data.CollectionViewSource.GetDefaultView(_rows);
-        view.Filter = o => o is DownloadRow r && _filter switch
+        var view = CollectionViewSource.GetDefaultView(_rows);
+        view.Filter = o => o is DownloadRow r && r.Matches(_search) && _filter switch
         {
-            "Queue" => r.State == RowState.Waiting,
+            "Active" => r.State is RowState.Active or RowState.Waiting,
+            "Paused" => r.State == RowState.Paused,
             "Done" => r.State == RowState.Completed,
             "Failed" => r.State is RowState.Failed or RowState.Cancelled,
-            _ => r.State is RowState.Active or RowState.Waiting or RowState.Paused,
+            _ => true,
         };
         view.Refresh();
 
@@ -187,69 +211,86 @@ public partial class MainWindow : Window
         PnlEmpty.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
         List.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
 
-        if (empty)
+        if (!empty) return;
+
+        if (_search.Length > 0)
         {
-            (TxtEmptyTitle.Text, TxtEmptySub.Text) = _filter switch
-            {
-                "Queue" => ("Kuyruk boş", "Sıraya alınan aktarımlar burada bekler."),
-                "Done" => ("Henüz tamamlanan yok", "Biten indirmeler burada listelenir."),
-                "Failed" => ("Başarısız indirme yok", "İyi haber."),
-                _ => ("İndirme yok",
-                      "Tarayıcıda bir bağlantıya sağ tıklayıp Akıntı ile indir seçin ya da yukarıya bağlantı yapıştırın."),
-            };
-        }
-    }
-
-    // ──────────── Hiz grafigi ────────────
-
-    private void PushSpeed(long bytesPerSecond)
-    {
-        _speedHistory.Add(bytesPerSecond / 1024.0 / 1024.0);
-        if (_speedHistory.Count > SparkPoints) _speedHistory.RemoveAt(0);
-
-        // Hic trafik yokken duz bir cizgi cizmek yerine grafigi bos birak.
-        if (_speedHistory.Count < 2 || _speedHistory.All(v => v <= 0.001))
-        {
-            SparkLine.Points = [];
-            SparkArea.Points = [];
+            TxtEmptyTitle.Text = "Eşleşen indirme yok";
+            TxtEmptySub.Text = $"“{_search}” için bir sonuç bulunamadı.";
             return;
         }
 
-        // Olcek: en yuksek degere gore, ama tepe noktasi ust kenara yapismasin.
-        var max = Math.Max(_speedHistory.Max(), 0.1) * 1.15;
-        var step = SparkW / (SparkPoints - 1);
-        var offset = SparkW - (_speedHistory.Count - 1) * step;
-
-        var line = new PointCollection(_speedHistory.Count);
-        for (var i = 0; i < _speedHistory.Count; i++)
+        (TxtEmptyTitle.Text, TxtEmptySub.Text) = _filter switch
         {
-            var x = offset + i * step;
-            var y = SparkH - 2 - (_speedHistory[i] / max) * (SparkH - 6);
-            line.Add(new Point(x, y));
-        }
-
-        var area = new PointCollection(line) { new Point(SparkW, SparkH), new Point(offset, SparkH) };
-        SparkLine.Points = line;
-        SparkArea.Points = area;
+            "Active" => ("Devam eden indirme yok", "Başlattığın indirmeler burada görünür."),
+            "Paused" => ("Duraklatılmış indirme yok", "Duraklattıkların burada bekler."),
+            "Done" => ("Henüz tamamlanan yok", "Biten indirmeler burada listelenir."),
+            "Failed" => ("Başarısız indirme yok", "İyi haber."),
+            _ => ("İndirme yok",
+                  "Tarayıcıda bir bağlantıya sağ tıklayıp Akıntı ile indir seçin ya da Yeni indirme'ye basın."),
+        };
     }
 
-    // ──────────── Kenar cubugu bilgileri ────────────
+    private void ApplySort(ICollectionView view)
+    {
+        view.SortDescriptions.Clear();
+        // Gruplar gune gore ayrildigi icin tarih sirasi gruplarin sirasini da belirler.
+        switch (_sort)
+        {
+            case 1:
+                view.SortDescriptions.Add(new SortDescription(nameof(DownloadRow.SortDate), ListSortDirection.Descending));
+                view.SortDescriptions.Add(new SortDescription(nameof(DownloadRow.Name), ListSortDirection.Ascending));
+                break;
+            case 2:
+                view.SortDescriptions.Add(new SortDescription(nameof(DownloadRow.SortDate), ListSortDirection.Descending));
+                view.SortDescriptions.Add(new SortDescription(nameof(DownloadRow.Total), ListSortDirection.Descending));
+                break;
+            default:
+                view.SortDescriptions.Add(new SortDescription(nameof(DownloadRow.SortDate), ListSortDirection.Descending));
+                break;
+        }
+    }
+
+    private void BtnSort_Click(object sender, RoutedEventArgs e)
+    {
+        _sort = (_sort + 1) % 3;
+        TxtSort.Text = _sort switch { 1 => "Ad", 2 => "Boyut", _ => "Tarih" };
+        ApplySort(CollectionViewSource.GetDefaultView(_rows));
+    }
+
+    // ──────────── Kenar cubugu ────────────
+
+    /// <summary>Kenar cubugunu yaziya gerek birakmadan daraltir; ikonlar kalir.</summary>
+    private void BtnMenu_Click(object sender, RoutedEventArgs e)
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
+        var vis = _sidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
+
+        ColSidebar.Width = new GridLength(_sidebarCollapsed ? 64 : 232);
+        foreach (var t in new[] { LblAll, LblActive, LblPaused, LblDone, LblFailed, LblSettings })
+            t.Visibility = vis;
+        foreach (var t in new FrameworkElement[] { CntAll, PillActive, CntPaused, CntDone, CntFailed, CardDisk })
+            t.Visibility = t == PillActive && CntActive.Text == "0" ? Visibility.Collapsed : vis;
+
+        BtnMenu.ToolTip = _sidebarCollapsed ? "Kenar çubuğunu genişlet" : "Kenar çubuğunu daralt";
+    }
 
     private void UpdateDiskInfo()
     {
         try
         {
             var dir = _cfg.DownloadDir;
-            TxtDiskName.Text = Path.GetFileName(dir.TrimEnd('\\')) is { Length: > 0 } n ? n : dir;
-
             var root = Path.GetPathRoot(Path.GetFullPath(dir));
+            TxtDiskName.Text = "Disk · " + (string.IsNullOrEmpty(root) ? dir : root.TrimEnd('\\'));
             if (string.IsNullOrEmpty(root)) return;
 
             var drive = new DriveInfo(root);
             if (!drive.IsReady) return;
 
-            TxtDiskFree.Text = Format.Bytes(drive.AvailableFreeSpace) + " boş";
-            BarDisk.Value = 100.0 * (drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize;
+            var used = 100.0 * (drive.TotalSize - drive.AvailableFreeSpace) / drive.TotalSize;
+            BarDisk.Value = used;
+            TxtDiskPct.Text = "%" + (int)Math.Round(used);
+            TxtDiskFree.Text = Format.Bytes(drive.AvailableFreeSpace) + " boş alan kaldı";
         }
         catch (Exception ex)
         {
@@ -260,8 +301,6 @@ public partial class MainWindow : Window
 
     private string CapLabel() =>
         _cfg.GlobalSpeedLimitBytes > 0 ? Format.Speed(_cfg.GlobalSpeedLimitBytes) : "Sınırsız";
-
-    private void UpdateCapLabel() => TxtCap.Text = CapLabel();
 
     // ──────────── Gezinme ────────────
 
@@ -274,7 +313,7 @@ public partial class MainWindow : Window
             // Ayarlar bir sayfa degil, kendi penceresi. Secimi eski sekmeye geri al.
             Dispatcher.BeginInvoke(() =>
             {
-                (_lastNav ?? NavActive).IsChecked = true;
+                (_lastNav ?? NavAll).IsChecked = true;
                 OpenSettings();
             });
             return;
@@ -294,44 +333,52 @@ public partial class MainWindow : Window
         _client?.Dispose();
         _client = _cfg.IsConfigured ? new Aria2Client(_cfg) : null;
         UpdateDiskInfo();
-        UpdateCapLabel();
     }
 
-    // ──────────── Baglanti cubugu ────────────
+    // ──────────── Arama ────────────
 
-    private void UpdateUrlPlaceholder() =>
-        TxtUrlPlaceholder.Visibility = string.IsNullOrEmpty(TxtUrl.Text)
+    private void UpdateSearchPlaceholder() =>
+        TxtSearchPlaceholder.Visibility = string.IsNullOrEmpty(TxtSearch.Text)
             ? Visibility.Visible : Visibility.Collapsed;
 
-    private void TxtUrl_TextChanged(object sender, TextChangedEventArgs e) => UpdateUrlPlaceholder();
-
-    private void TxtUrl_KeyDown(object sender, KeyEventArgs e)
+    private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (e.Key == Key.Enter) { AddFromUrlBar(); e.Handled = true; }
+        UpdateSearchPlaceholder();
+        _search = TxtSearch.Text.Trim();
+        ApplyFilter();
     }
 
-    private void BtnAddUrl_Click(object sender, RoutedEventArgs e) => AddFromUrlBar();
-
-    private void AddFromUrlBar()
-    {
-        var url = TxtUrl.Text.Trim();
-        if (url.Length == 0) { TxtUrl.Focus(); return; }
-
-        if (!UrlHelper.IsSupportedScheme(url))
-        {
-            Warn("Desteklenmeyen adres. http, https, ftp, sftp ya da magnet olmalı.");
-            return;
-        }
-
-        // Adres cubugundan eklemek de diyalogdan gecer: her indirme goz onunde onaylanir.
-        new NewDownloadWindow(url) { Owner = this }.Show();
-        TxtUrl.Clear();
-    }
+    // ──────────── Arac cubugu ────────────
 
     private void BtnNew_Click(object sender, RoutedEventArgs e) =>
         // (string?)null sart: CapturedRequest asiri yuklemesi eklendiginden
         // duz null hangi kurucuya gidecegi belirsiz kaliyor.
         new NewDownloadWindow((string?)null) { Owner = this }.Show();
+
+    private void BtnOpenFolder_Click(object sender, RoutedEventArgs e) =>
+        PostActions.OpenFolder(_cfg.DownloadDir);
+
+    /// <summary>Yalnizca BITMIS kayitlari listeden siler; suren indirmelere dokunmaz.</summary>
+    private async void BtnClearList_Click(object sender, RoutedEventArgs e)
+    {
+        var finished = _rows.Where(r => r.IsFinished).ToList();
+        if (finished.Count == 0) return;
+
+        var answer = MessageBox.Show(this,
+            $"{finished.Count} tamamlanmış kayıt listeden silinsin mi? Dosyalar diskte kalır.",
+            "Akıntı", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.OK) return;
+
+        foreach (var row in finished)
+        {
+            try { if (_client is not null) await _client.RemoveResultAsync(row.Gid); }
+            catch { /* aria2 kaydi zaten unutmus olabilir */ }
+            HistoryStore.Remove(row.Gid);
+            _rows.Remove(row);
+            _byGid.Remove(row.Gid);
+        }
+        ApplyFilter();
+    }
 
     private async void BtnToggleAll_Click(object sender, RoutedEventArgs e)
     {
@@ -367,6 +414,31 @@ public partial class MainWindow : Window
             await RefreshAsync();
         }
         catch (Exception ex) { Warn("İşlem başarısız: " + ex.Message); }
+    }
+
+    private void RowOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (RowOf(sender) is not { FilePath.Length: > 0 } row) return;
+        PostActions.OpenFile(row.FilePath);
+    }
+
+    private void RowRetry_Click(object sender, RoutedEventArgs e)
+    {
+        if (RowOf(sender) is { SourceUri.Length: > 0 } row)
+            new NewDownloadWindow(row.SourceUri) { Owner = this }.Show();
+    }
+
+    /// <summary>"…" dugmesi satirin kendi menusunu acar; sag tik menusuyle ayni.</summary>
+    private void RowMore_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement el || RowOf(sender) is not { } row) return;
+
+        List.SelectedItem = row;
+        if (List.ContextMenu is not { } menu) return;
+
+        menu.PlacementTarget = el;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     private async void RowRemove_Click(object sender, RoutedEventArgs e)

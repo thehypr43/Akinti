@@ -1,0 +1,26 @@
+Akıntı kuruldu. Geriye tek bir adım kaldı: Chrome eklentisi.
+
+Chrome, mağaza dışından gelen eklentileri tek tıkla kurdurmuyor; bu yüzden
+aşağıdaki üç adım elle yapılıyor.
+
+1. Chrome'da adres çubuğuna yaz:  chrome://extensions
+2. Sağ üstten "Geliştirici modu"nu aç, sonra "Paketlenmemiş öğeyi yükle"ye bas.
+3. Şu klasörü seç:
+   %LOCALAPPDATA%\Programs\Akinti\extension
+
+Sonra Başlat menüsündeki "Akıntı > Eklenti kimliğini bağla" kısayoluna bir kez
+tıkla. Chrome eklentiye kimliğini yüklerken veriyor; bu adım o kimliği okuyup
+masaüstü uygulamasıyla konuşma iznini ona bağlar. Atlanırsa eklenti
+"Access to the specified native messaging host is forbidden" der ve
+indirmeleri yakalayamaz.
+
+Eklentiyi kurmasan da program çalışır: indirmeleri Akıntı'nın kendi
+penceresinden başlatabilirsin. Eklenti yalnızca tarayıcıdaki indirmeleri
+devralmak için gerekli.
+
+Ne nerede
+---------
+Uygulama : %LOCALAPPDATA%\Programs\Akinti
+Ayarlar  : %APPDATA%\Akinti\config.json
+Günlük   : %APPDATA%\Akinti\akinti.log
+İndirilenler klasörü ve inen dosyalar kaldırma sırasında silinmez.

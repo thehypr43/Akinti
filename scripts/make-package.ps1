@@ -133,34 +133,26 @@ if (Test-Path $extZip) { Remove-Item $extZip -Force }
 Compress-Archive -Path (Join-Path $OutDir 'extension\*') -DestinationPath $extZip
 Ok $extZip
 
-$rar = @(
-    (Join-Path $env:ProgramFiles 'WinRAR\Rar.exe'),
-    (Join-Path ${env:ProgramFiles(x86)} 'WinRAR\Rar.exe')
+# Asil kurulum programi: Inno Setup. Sihirbaz penceresi, Baslat menusu ve
+# masaustu kisayollari, "Uygulamalar ve ozellikler" altinda kaldirma girisi.
+# Konsol penceresi acilmaz: ayar adimlari kurulum sonunda gizli calisir.
+$iscc = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+    (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-if ($rar) {
-    Step 'Kurulum dosyasi olusturuluyor'
+if ($iscc) {
+    Step 'Kurulum programi derleniyor'
     $setup = Join-Path $desktop 'Akinti-Kurulum.exe'
     if (Test-Path $setup) { Remove-Item $setup -Force }
 
-    $sfxCfg = Join-Path $env:TEMP 'akinti-sfx.txt'
-    @'
-;The comment below contains SFX script commands
+    & $iscc "/DSourceRoot=$RepoRoot" "/DOutputDirectory=$desktop" `
+            (Join-Path $PSScriptRoot 'akinti.iss') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Inno Setup derlemesi basarisiz (kod $LASTEXITCODE)." }
 
-Setup=KUR.cmd
-TempMode
-Silent=1
-Overwrite=1
-Title=Akinti Kurulumu
-'@ | Set-Content $sfxCfg -Encoding ascii
-
-    $sfxModule = Join-Path (Split-Path $rar) 'Default.SFX'
-    & $rar a -r -ep1 -idq -m3 "-sfx$sfxModule" "-z$sfxCfg" $setup (Join-Path $OutDir '*') | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "Kurulum dosyasi olusturulamadi (rar $LASTEXITCODE)." }
-    Remove-Item $sfxCfg -Force -ErrorAction SilentlyContinue
-
-    $mb = (Get-Item $setup).Length / 1MB
-    Ok ("{0}  ({1:N0} MB)" -f $setup, $mb)
+    Ok ("{0}  ({1:N0} MB)" -f $setup, ((Get-Item $setup).Length / 1MB))
 } else {
-    Ok 'WinRAR bulunamadi; tek dosyalik setup uretilmedi, klasor kullanilabilir.'
+    Ok 'Inno Setup bulunamadi; kurulum programi uretilmedi.'
+    Ok 'Kur:  winget install JRSoftware.InnoSetup'
 }

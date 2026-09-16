@@ -23,7 +23,11 @@
 [CmdletBinding()]
 param(
     [string]$ExtensionId,
-    [switch]$SkipBuild
+    [switch]$SkipBuild,
+
+    # Dosyalar zaten yerinde (kurulum programi kopyaladi): yalnizca ayar,
+    # motor, zamanlanmis gorev ve tarayici koprusu adimlari calissin.
+    [switch]$ConfigureOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,7 +45,13 @@ function Ok($msg)   { Write-Host "    $msg" -ForegroundColor DarkGray }
 function Warn2($m)  { Write-Host "    ! $m" -ForegroundColor Yellow }
 
 # ---------------------------------------------------------------- 1. Derle ve kopyala
-if (-not $SkipBuild) {
+if ($ConfigureOnly) {
+    $ExePath = Join-Path $InstallDir 'Akinti.exe'
+    if (-not (Test-Path $ExePath)) { throw "Akinti.exe bulunamadi: $ExePath" }
+    New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+    Ok "Dosyalar yerinde: $InstallDir"
+}
+elseif (-not $SkipBuild) {
     Step 'Uygulama derleniyor'
     if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
         throw ".NET SDK bulunamadi. Once kur:  winget install Microsoft.DotNet.SDK.10"
@@ -55,10 +65,12 @@ if (-not $SkipBuild) {
 }
 
 $aria2 = Join-Path $RepoRoot 'tools\aria2c.exe'
-if (-not (Test-Path $aria2)) {
+if (-not $ConfigureOnly -and -not (Test-Path $aria2)) {
     Step 'aria2c.exe indiriliyor'
     & (Join-Path $PSScriptRoot 'fetch-aria2.ps1')
 }
+
+if (-not $ConfigureOnly) {
 
 Step "Dosyalar kopyalaniyor: $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir, $DataDir, (Join-Path $InstallDir 'tools') | Out-Null
@@ -80,6 +92,7 @@ Copy-Item -Path (Join-Path $RepoRoot 'extension\chrome\*') -Destination $ExtDir 
 $ExePath = Join-Path $InstallDir 'Akinti.exe'
 if (-not (Test-Path $ExePath)) { throw "Akinti.exe kopyalanamadi." }
 Ok "Akinti.exe hazir"
+}
 
 # ---------------------------------------------------------------- 2. Port + parola
 Step 'RPC portu ve parolasi uretiliyor'

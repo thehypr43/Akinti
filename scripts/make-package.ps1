@@ -59,18 +59,15 @@ foreach ($f in 'install.ps1', 'uninstall.ps1', 'check-extension.ps1', 'fetch-ari
 # Cift tiklanabilir baslaticilar. install.ps1 PowerShell 7 sozdizimi kullaniyor
 # (ConvertFrom-Json -AsHashtable), o yuzden pwsh yoksa kurulum durur ve ne
 # yapilacagini soyler.
+# Kurulum artik Windows'un kurulu geldigi PowerShell 5.1 ile de calisiyor;
+# pwsh varsa o tercih ediliyor, yoksa powershell.exe'ye duşuluyor.
 $kur = @'
 @echo off
 setlocal
 cd /d "%~dp0"
-where pwsh >nul 2>nul
-if errorlevel 1 (
-  echo PowerShell 7 gerekiyor.
-  echo Once sunu calistir:  winget install Microsoft.PowerShell
-  pause
-  exit /b 1
-)
-pwsh -NoProfile -ExecutionPolicy Bypass -File "scripts\install.ps1" -SkipBuild
+set PS=pwsh
+where pwsh >nul 2>nul || set PS=powershell
+%PS% -NoProfile -ExecutionPolicy Bypass -File "scripts\install.ps1" -SkipBuild
 pause
 '@
 Set-Content (Join-Path $OutDir 'KUR.cmd') $kur -Encoding ascii
@@ -79,7 +76,9 @@ $kaldir = @'
 @echo off
 setlocal
 cd /d "%~dp0"
-pwsh -NoProfile -ExecutionPolicy Bypass -File "scripts\uninstall.ps1"
+set PS=pwsh
+where pwsh >nul 2>nul || set PS=powershell
+%PS% -NoProfile -ExecutionPolicy Bypass -File "scripts\uninstall.ps1"
 pause
 '@
 Set-Content (Join-Path $OutDir 'KALDIR.cmd') $kaldir -Encoding ascii
@@ -93,8 +92,7 @@ Hedef bilgisayarda .NET kurmana ya da internete bağlanmana gerek yok.
 
 KURULUM
 -------
-1. KUR.cmd dosyasına çift tıkla.
-   (PowerShell 7 yoksa önce:  winget install Microsoft.PowerShell)
+1. Akinti-Kurulum.exe'ye çift tıkla. (Ya da bu klasördeki KUR.cmd'ye.)
 
 2. Chrome eklentisini yükle:
      chrome://extensions  ->  Geliştirici modu (sağ üst)  ->  Paketlenmemiş öğeyi yükle
@@ -120,3 +118,49 @@ Set-Content (Join-Path $OutDir 'KURULUM.txt') $readme -Encoding utf8
 
 $size = (Get-ChildItem $OutDir -Recurse -File | Measure-Object -Property Length -Sum).Sum
 Ok ("Paket hazir: {0}  ({1:N0} MB)" -f $OutDir, ($size / 1MB))
+
+# ─────────── Tek dosyalik kurulum ve eklenti paketi ───────────
+#
+# Klasoru olmayan, cift tiklanip gecilen bir setup: WinRAR'in SFX modulu
+# paketi gecici klasore acip KUR.cmd'yi calistiriyor, isi bitince siliyor.
+# WinRAR yoksa klasor yine kullanilabilir halde duruyor.
+
+$desktop = [Environment]::GetFolderPath('Desktop')
+
+Step 'Eklenti paketleniyor'
+$extZip = Join-Path $desktop 'Akinti-Eklenti.zip'
+if (Test-Path $extZip) { Remove-Item $extZip -Force }
+Compress-Archive -Path (Join-Path $OutDir 'extension\*') -DestinationPath $extZip
+Ok $extZip
+
+$rar = @(
+    (Join-Path $env:ProgramFiles 'WinRAR\Rar.exe'),
+    (Join-Path ${env:ProgramFiles(x86)} 'WinRAR\Rar.exe')
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if ($rar) {
+    Step 'Kurulum dosyasi olusturuluyor'
+    $setup = Join-Path $desktop 'Akinti-Kurulum.exe'
+    if (Test-Path $setup) { Remove-Item $setup -Force }
+
+    $sfxCfg = Join-Path $env:TEMP 'akinti-sfx.txt'
+    @'
+;The comment below contains SFX script commands
+
+Setup=KUR.cmd
+TempMode
+Silent=1
+Overwrite=1
+Title=Akinti Kurulumu
+'@ | Set-Content $sfxCfg -Encoding ascii
+
+    $sfxModule = Join-Path (Split-Path $rar) 'Default.SFX'
+    & $rar a -r -ep1 -idq -m3 "-sfx$sfxModule" "-z$sfxCfg" $setup (Join-Path $OutDir '*') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Kurulum dosyasi olusturulamadi (rar $LASTEXITCODE)." }
+    Remove-Item $sfxCfg -Force -ErrorAction SilentlyContinue
+
+    $mb = (Get-Item $setup).Length / 1MB
+    Ok ("{0}  ({1:N0} MB)" -f $setup, $mb)
+} else {
+    Ok 'WinRAR bulunamadi; tek dosyalik setup uretilmedi, klasor kullanilabilir.'
+}

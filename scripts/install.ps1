@@ -198,13 +198,37 @@ function Get-UnpackedExtensionId([string]$path) {
         $normalized = $normalized.Substring(0,1).ToUpper() + $normalized.Substring(1)
     }
     $bytes  = [System.Text.Encoding]::Unicode.GetBytes($normalized)
-    $hash   = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    # HashData yalnizca PowerShell 7'de var; kurulum Windows'un kendi
+    # PowerShell 5.1'inde de calissin diye ComputeHash kullaniliyor.
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try   { $hash = $sha256.ComputeHash($bytes) }
+    finally { $sha256.Dispose() }
     $sb     = [System.Text.StringBuilder]::new()
     for ($i = 0; $i -lt 16; $i++) {
         [void]$sb.Append([char](97 + ($hash[$i] -shr 4)))
         [void]$sb.Append([char](97 + ($hash[$i] -band 0x0F)))
     }
     return $sb.ToString()
+}
+
+# ConvertFrom-Json, PowerShell 5.1'de PSCustomObject; 7'de -AsHashtable ile
+# hashtable donuyordu. Kurulum iki surumde de calissin diye JSON her zaman
+# PSCustomObject olarak okunuyor, alanlara da bu iki yardimciyla bakiliyor.
+function Get-Prop($obj, [string]$name) {
+    if ($null -eq $obj) { return $null }
+    if ($obj -is [System.Collections.IDictionary]) {
+        if ($obj.Contains($name)) { return $obj[$name] }
+        return $null
+    }
+    $prop = $obj.PSObject.Properties[$name]
+    if ($prop) { return $prop.Value }
+    return $null
+}
+
+function Get-Names($obj) {
+    if ($null -eq $obj) { return @() }
+    if ($obj -is [System.Collections.IDictionary]) { return @($obj.Keys) }
+    return @($obj.PSObject.Properties.Name)
 }
 
 function Get-LoadedExtensionIds([string[]]$dirs) {
@@ -225,29 +249,23 @@ function Get-LoadedExtensionIds([string[]]$dirs) {
             foreach ($file in 'Preferences', 'Secure Preferences') {
                 $p = Join-Path $prof.FullName $file
                 if (-not (Test-Path $p)) { continue }
-                # -AsHashtable: StrictMode altinda PSCustomObject uzerinde olmayan
-                # ozellige bakmak hata firlatiyor; hashtable'da ContainsKey guvenli.
                 try {
-                    $json = Get-Content $p -Raw -Encoding utf8 | ConvertFrom-Json -AsHashtable
+                    $json = Get-Content $p -Raw -Encoding utf8 | ConvertFrom-Json
                 } catch { continue }
 
-                if (-not $json.ContainsKey('extensions')) { continue }
-                $ext = $json['extensions']
-                if ($ext -isnot [hashtable] -or -not $ext.ContainsKey('settings')) { continue }
-                $settings = $ext['settings']
-                if ($settings -isnot [hashtable]) { continue }
+                $settings = Get-Prop (Get-Prop $json 'extensions') 'settings'
+                if ($null -eq $settings) { continue }
 
-                foreach ($id in $settings.Keys) {
-                    $val = $settings[$id]
-                    if ($val -isnot [hashtable]) { continue }
+                foreach ($id in (Get-Names $settings)) {
+                    $val = Get-Prop $settings $id
+                    if ($null -eq $val) { continue }
 
                     $match = $false
-                    $extPath = ''
+                    $extPath = [string](Get-Prop $val 'path')
 
-                    if ($val.ContainsKey('path')) {
-                        $extPath = [string]$val['path']
+                    if ($extPath) {
                         foreach ($d in $dirs) {
-                            if ($extPath -and $extPath.TrimEnd('\') -ieq $d.TrimEnd('\')) { $match = $true }
+                            if ($extPath.TrimEnd('\') -ieq $d.TrimEnd('\')) { $match = $true }
                         }
                     }
 
@@ -260,8 +278,8 @@ function Get-LoadedExtensionIds([string[]]$dirs) {
                     if (-not $match -and $extPath -and (Test-Path (Join-Path $extPath 'manifest.json'))) {
                         try {
                             $man = Get-Content (Join-Path $extPath 'manifest.json') -Raw -Encoding utf8 |
-                                   ConvertFrom-Json -AsHashtable
-                            if ($man.ContainsKey('name') -and [string]$man['name'] -eq 'Akıntı') { $match = $true }
+                                   ConvertFrom-Json
+                            if ([string](Get-Prop $man 'name') -eq 'Akıntı') { $match = $true }
                         } catch { }
                     }
 

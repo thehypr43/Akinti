@@ -63,6 +63,24 @@ async function showDownloadUi() {
   catch (e) { console.warn("Akıntı: indirme arayüzü geri açılamadı.", e); }
 }
 
+// Balon bir kez acilinca acik kaliyor; devralacagimiz indirmeden hemen once
+// tekrar kapatilir ki iptal edilen indirme bos balon birakmasin.
+async function hideDownloadUi() {
+  try { await chrome.downloads.setUiOptions({ enabled: false }); }
+  catch (e) { console.warn("Akıntı: indirme arayüzü kapatılamadı.", e); }
+}
+
+// Devir bitti; o sirada Chrome'un kendi indirdigi baska bir sey varsa
+// balonu geri ac, yoksa o indirme gorunmez kalir.
+async function showUiIfChromeBusy() {
+  try {
+    const active = await chrome.downloads.search({ state: "in_progress", paused: false });
+    if (active.length > 0) await showDownloadUi();
+  } catch (e) {
+    console.warn("Akıntı: etkin indirmeler okunamadı.", e);
+  }
+}
+
 // ───────────────────────── Sağ tık ─────────────────────────
 
 chrome.contextMenus.onClicked.addListener((info) => {
@@ -93,12 +111,15 @@ chrome.downloads.onCreated.addListener(async (item) => {
 
   // finalUrl yönlendirmelerden sonraki gerçek adres; yoksa url'e düş.
   const url = valid(item.finalUrl || item.url);
-  if (!url) return;                       // blob:, data:, "Sayfayı kaydet" vb. Chrome'da kalsın
-  if (item.state !== "in_progress") return;
+  // Yakalanmayan her indirme Chrome'da kaliyor; balon kapaliysa kullanici
+  // indigini goremiyordu. Chrome'a birakilan her yolda balonu geri aciyoruz.
+  if (!url) { showDownloadUi(); return; } // blob:, data:, "Sayfayı kaydet" vb. Chrome'da kalsın
+  if (item.state !== "in_progress") { showDownloadUi(); return; }
 
   chrome.downloads.pause(item.id, async () => {
     if (chrome.runtime.lastError) {
       // Duraklatilamiyor (cok kucuk dosya coktan bitmis olabilir): dokunma.
+      showDownloadUi();
       return;
     }
 
@@ -126,6 +147,7 @@ chrome.downloads.onCreated.addListener(async (item) => {
     const base = baseName(info.filename) || baseName(item.filename);
     if (base) msg.filename = base;
 
+    await hideDownloadUi();
     handOver(item, msg);
   });
 });
@@ -164,7 +186,10 @@ async function handOver(item, msg) {
     // Devir tamam: Chrome'un kopyasını iptal et ve listesinden sil.
     chrome.downloads.cancel(item.id, () => {
       if (chrome.runtime.lastError) return;
-      chrome.downloads.erase({ id: item.id }, () => void chrome.runtime.lastError);
+      chrome.downloads.erase({ id: item.id }, () => {
+        void chrome.runtime.lastError;
+        showUiIfChromeBusy();
+      });
     });
   });
 }
